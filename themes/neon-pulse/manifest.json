@@ -1,13 +1,12 @@
 {
 	"id": "neon-pulse",
 	"name": "Neon Pulse",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "theme",
 	"author": {
 		"name": "thefable1",
-		"url": "https://github.com/thefable1/Zephyr-plugin"
+		"url": "https://github.com/thefable1/Zephyr-plugin-test"
 	},
-	"description": "Test theme with a hot magenta + electric cyan palette, every Zephyr CSS token is overridden so theme loading is visually unmistakable.",
-	"icon": "icon.svg",
+	"description": "Theme with a hot magenta + electric cyan palette.",
 	"entry": "theme.css"
 }
