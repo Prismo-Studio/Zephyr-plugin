@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-05-08T23:33:46.091Z",
+  "generated": "2026-05-08T23:47:35.953Z",
   "plugins": [
     {
       "id": "archipelago",
@@ -20,14 +20,13 @@
     {
       "id": "neon-pulse",
       "name": "Neon Pulse",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "type": "theme",
       "author": {
         "name": "thefable1",
-        "url": "https://github.com/thefable1/Zephyr-plugin"
+        "url": "https://github.com/thefable1/Zephyr-plugin-test"
       },
-      "description": "Test theme with a hot magenta + electric cyan palette, every Zephyr CSS token is overridden so theme loading is visually unmistakable.",
-      "icon": "icon.svg",
+      "description": "Theme with a hot magenta + electric cyan palette.",
       "entry": "theme.css",
       "path": "themes/neon-pulse"
     }
