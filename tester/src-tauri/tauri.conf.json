@@ -1,0 +1,97 @@
+{
+	"productName": "Zephyr Plugin Tester",
+	"version": "0.1.0",
+	"identifier": "dev.zephyr.plugin-tester",
+	"build": {
+		"beforeBuildCommand": "pnpm run build",
+		"beforeDevCommand": "pnpm run dev",
+		"frontendDist": "../build",
+		"devUrl": "http://localhost:5180"
+	},
+	"bundle": {
+		"active": true,
+		"category": "Game",
+		"copyright": "",
+		"targets": ["nsis", "appimage", "deb", "dmg", "rpm"],
+		"externalBin": [],
+		"createUpdaterArtifacts": true,
+		"shortDescription": "A fast, modern mod manager for all your games",
+		"longDescription": "",
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		],
+		"windows": {
+			"certificateThumbprint": null,
+			"digestAlgorithm": "sha256",
+			"timestampUrl": "",
+			"nsis": {
+				"installMode": "currentUser",
+				"installerIcon": "icons/icon.ico",
+				"sidebarImage": "icons/sidebar.bmp",
+				"headerImage": "icons/header.bmp"
+			}
+		},
+		"linux": {
+			"deb": {
+				"depends": []
+			}
+		},
+		"macOS": {
+			"dmg": {
+				"appPosition": {
+					"x": 180,
+					"y": 170
+				},
+				"applicationFolderPosition": {
+					"x": 480,
+					"y": 170
+				}
+			},
+			"minimumSystemVersion": "10.15"
+		},
+		"resources": {},
+		"fileAssociations": []
+	},
+	"plugins": {
+		"updater": {
+			"pubkey": "",
+			"endpoints": []
+		},
+		"deep-link": {
+			"desktop": {
+				"schemes": ["ror2mm", "zephyr"]
+			}
+		}
+	},
+	"app": {
+		"windows": [
+			{
+				"visible": false,
+				"decorations": true,
+				"fullscreen": false,
+				"transparent": false,
+				"resizable": true,
+				"title": "Zephyr",
+				"width": 900,
+				"height": 700,
+				"minWidth": 800,
+				"minHeight": 600,
+				"dragDropEnabled": false,
+				"zoomHotkeysEnabled": false,
+				"titleBarStyle": "Overlay",
+				"hiddenTitle": true
+			}
+		],
+		"security": {
+			"csp": "default-src * ipc: http://ipc.localhost; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' https://storage.ko-fi.com; font-src https://fonts.gstatic.com",
+			"assetProtocol": {
+				"enable": true,
+				"scope": ["**"]
+			}
+		}
+	}
+}

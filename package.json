@@ -1,0 +1,10 @@
+{
+	"name": "zephyr-plugins",
+	"private": true,
+	"description": "Zephyr plugin registry, author scaffolds, and local test tools.",
+	"scripts": {
+		"build:registry": "node scripts/build-registry.mjs",
+		"validate": "node scripts/validate.mjs",
+		"preview": "node scripts/preview.mjs"
+	}
+}

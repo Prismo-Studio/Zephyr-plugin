@@ -1,0 +1,14 @@
+{
+	"id": "example-feature",
+	"name": "Example Feature",
+	"version": "1.0.0",
+	"type": "feature",
+	"author": {
+		"name": "Your Name",
+		"url": "https://github.com/your-handle"
+	},
+	"description": "A bundled Zephyr feature — the runtime code ships inside Zephyr, this manifest just describes it for the plugin browser.",
+	"icon": "mdi:puzzle",
+	"defaultInstalled": false,
+	"removable": true
+}

@@ -1,0 +1,13 @@
+{
+	"name": "Example Game",
+	"slug": "example-game",
+	"modLoader": {
+		"name": "BepInEx"
+	},
+	"platforms": {
+		"steam": {
+			"id": 0,
+			"dirName": "ExampleGame"
+		}
+	}
+}

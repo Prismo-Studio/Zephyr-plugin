@@ -1,0 +1,568 @@
+<script lang="ts">
+	import '../app.css';
+
+	import Titlebar from '$lib/components/layout/Titlebar.svelte';
+	import Sidebar from '$lib/components/layout/Sidebar.svelte';
+	import Statusbar from '$lib/components/layout/Statusbar.svelte';
+	import Toasts from '$lib/components/ui/Toasts.svelte';
+	import InstallPopover from '$lib/components/toolbar/InstallPopover.svelte';
+	import InstallModDialog from '$lib/components/dialogs/InstallModDialog.svelte';
+	import ImportProfileDialog from '$lib/components/dialogs/ImportProfileDialog.svelte';
+	// Dev-only easter egg (DOOM via 0x5f3759df). Uncomment this import + the
+	// <DoomEasterEgg /> mount below + the DOOM_SEQUENCE block in tokens.ts to enable.
+	// import DoomEasterEgg from '$lib/components/dialogs/DoomEasterEgg.svelte';
+	import GlobalSearch from '$lib/components/ui/GlobalSearch.svelte';
+
+	import { onMount, type Snippet } from 'svelte';
+	import { refreshColor, refreshFont } from '$lib/themeSystem';
+	import { initTheme } from '$lib/design-system/tokens';
+	import {
+		initGamepad,
+		setGamepadEnabled,
+		gamepadState,
+		gamepadKeyboard
+	} from '$lib/gamepad.svelte';
+	import GamepadKeyboard from '$lib/components/ui/GamepadKeyboard.svelte';
+	import profiles from '$lib/state/profile.svelte';
+	import games from '$lib/state/game.svelte';
+	import auth from '$lib/state/auth.svelte';
+	import plugins from '$lib/state/plugins.svelte';
+	import { updateBanner } from '$lib/state/misc.svelte';
+	import updates from '$lib/state/update.svelte';
+	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+	import { PersistedState } from 'runed';
+	import type { ProfileInfo, ManagedGameInfo } from '$lib/types';
+	import { updateAppLanguage, i18nState } from '$lib/i18nCore.svelte';
+	import { getLocale, locales, type Locale } from '$lib/paraglide/runtime';
+	import * as api from '$lib/api';
+	import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { initFullscreen, toggleFullscreen } from '$lib/fullscreen.svelte';
+	import { matchesShortcut, isEditableTarget } from '$lib/state/shortcuts.svelte';
+	import CustomBackground from '$lib/components/CustomBackground.svelte';
+	import { initCustomBg } from '$lib/design-system/customBg.svelte';
+	import { initErrorListener } from '$lib/invoke';
+	import { open } from '@tauri-apps/plugin-shell';
+	import { relaunch } from '@tauri-apps/plugin-process';
+	import { getVersion } from '@tauri-apps/api/app';
+	import { pushToast, pushInfoToast } from '$lib/toast.svelte';
+	import { initTelemetry, captureEvent } from '$lib/telemetry.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Icon from '@iconify/svelte';
+	import { m } from '$lib/paraglide/messages';
+
+	type Props = {
+		children?: Snippet;
+	};
+
+	let { children }: Props = $props();
+
+	let updateInstalling = $state(false);
+	let appVersion = $state('');
+
+	$effect(() => {
+		profiles.active;
+		updateBanner.threshold = 0;
+	});
+
+	/** Standalone companion window (opened via `open_console_window`). Renders
+	 *  the children full-bleed with no sidebar/titlebar/statusbar chrome. */
+	const isStandalone =
+		typeof window !== 'undefined' &&
+		new URLSearchParams(window.location.search).get('standalone') === '1';
+
+	let currentDpiScale = 1;
+	const DPI_STEPS = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25, 1.5, 1.75, 2];
+	// Throttle Ctrl+wheel zoom so a single wheel notch only nudges once.
+	let lastZoomWheelAt = 0;
+
+	async function nudgeDpiScale(direction: number) {
+		const currentIdx = DPI_STEPS.indexOf(currentDpiScale);
+		let nextIdx: number;
+		if (currentIdx === -1) {
+			nextIdx = DPI_STEPS.findIndex((s) => s >= currentDpiScale);
+			if (nextIdx === -1) nextIdx = DPI_STEPS.length - 1;
+		} else {
+			nextIdx = currentIdx + direction;
+		}
+		nextIdx = Math.max(0, Math.min(DPI_STEPS.length - 1, nextIdx));
+		const next = DPI_STEPS[nextIdx];
+		currentDpiScale = await api.prefs.setDpiScale(next);
+		window.dispatchEvent(new CustomEvent('dpi-scale-changed', { detail: currentDpiScale }));
+	}
+
+	async function installUpdate() {
+		if (!updates.next || updateInstalling) return;
+		updateInstalling = true;
+		try {
+			await updates.next.downloadAndInstall();
+			pushInfoToast({ message: m.updater_update_message() });
+			await relaunch();
+		} catch (err) {
+			pushToast({
+				type: 'error',
+				name: m.updater_installUpdate_message_name(),
+				message: String(err)
+			});
+			updateInstalling = false;
+		}
+	}
+
+	let unlistenProfiles: UnlistenFn | null;
+	let unlistenGames: UnlistenFn | null;
+
+	/** Track in-app navigation. SvelteKit routes via History API, so we intercept
+	 *  pushState/replaceState/popstate. Fires once for the initial load too. */
+	function setupPageTracking() {
+		let lastPath = location.pathname;
+
+		const fire = (type: string) => {
+			const path = location.pathname;
+			if (path === lastPath) return;
+			captureEvent('page_viewed', { path, from: lastPath, type });
+			lastPath = path;
+		};
+
+		// Initial page (covers the first render in addition to app_started).
+		captureEvent('page_viewed', { path: lastPath, from: null, type: 'enter' });
+
+		const origPush = history.pushState.bind(history);
+		const origReplace = history.replaceState.bind(history);
+		history.pushState = function (state, title, url) {
+			origPush(state, title, url);
+			fire('push');
+		};
+		history.replaceState = function (state, title, url) {
+			origReplace(state, title, url);
+			fire('replace');
+		};
+		window.addEventListener('popstate', () => fire('popstate'));
+	}
+
+	onMount(() => {
+		setupPageTracking();
+		document.addEventListener(
+			'keydown',
+			(e) => {
+				if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+				}
+				if (e.key === 'F12') {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+				}
+				if (matchesShortcut(e, 'toggleFullscreen') && !isEditableTarget(e.target)) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+					toggleFullscreen();
+				}
+			},
+			true
+		);
+
+		initFullscreen();
+		initCustomBg();
+
+		getCurrentWindow()
+			.isVisible()
+			.then((visible) => {
+				if (!visible) {
+					getCurrentWindow().show();
+				}
+			});
+		initErrorListener();
+		// Tester runs the plugin pipeline only — skip the mod manager's data
+		// loading (profiles, games, auth) and the auto-updater so the window
+		// doesn't pop "Update available!" pointing at upstream Zephyr releases.
+		plugins.init().catch(() => {});
+		getVersion().then(async (v) => {
+			appVersion = v;
+			// Anonymous opt-in telemetry. No-op unless user has enabled the toggle.
+			await initTelemetry();
+			captureEvent('app_started', { version: v });
+		});
+		initTheme();
+		refreshFont();
+		refreshColor('accent');
+		refreshColor('primary');
+		// Initialize language
+		(async () => {
+			let prefs = await api.prefs.get();
+			let lang: string;
+
+			currentDpiScale = prefs.dpiScale;
+
+			// Initialize gamepad
+			initGamepad();
+			if (prefs.gamepadEnabled) {
+				setGamepadEnabled(true);
+			}
+
+			if (await api.state.isFirstRun()) {
+				const { locale } = await import('@tauri-apps/plugin-os');
+				let systemLocale = await locale();
+				if (systemLocale && locales.includes(systemLocale as Locale)) {
+					lang = systemLocale;
+					prefs.language = lang;
+					await api.prefs.set(prefs);
+				} else {
+					lang = prefs.language;
+				}
+			} else {
+				lang = prefs.language;
+			}
+
+			// Fallback to base locale if stored language was removed
+			if (!locales.includes(lang as Locale)) {
+				lang = 'en';
+				prefs.language = lang;
+				await api.prefs.set(prefs);
+			}
+
+			if (lang !== getLocale()) {
+				updateAppLanguage(lang);
+			}
+		})();
+
+		listen<ProfileInfo>('profile_changed', (evt) => {
+			profiles.updateOne(evt.payload);
+		}).then((callback) => (unlistenProfiles = callback));
+
+		listen<ManagedGameInfo>('game_changed', (evt) => {
+			profiles.update(evt.payload);
+		}).then((callback) => (unlistenGames = callback));
+
+		return () => {
+			unlistenProfiles?.();
+			unlistenGames?.();
+		};
+	});
+</script>
+
+<svelte:window
+	onwheel={(evt) => {
+		// Ctrl + wheel: zoom in/out (matches Ctrl+= / Ctrl+-).
+		if (!evt.ctrlKey || evt.shiftKey || evt.altKey || evt.metaKey) return;
+		if (evt.deltaY === 0) return;
+		evt.preventDefault();
+		// Throttle so trackpads / smooth wheels don't fire dozens of nudges.
+		const now = performance.now();
+		if (now - lastZoomWheelAt < 120) return;
+		lastZoomWheelAt = now;
+		nudgeDpiScale(evt.deltaY < 0 ? 1 : -1);
+	}}
+	onkeydown={(evt) => {
+		const k = evt.key.toLowerCase();
+		// Block F12 (devtools)
+		if (k === 'f12') {
+			evt.preventDefault();
+			return;
+		}
+		// Soft refresh: reload data without full page reload. Triggered by
+		// the configured `refreshData` shortcut (default Ctrl+R) or F5.
+		// Dispatches `app:refresh` so pages with their own data sources
+		// (e.g. the mod browser) can opt in by listening for it.
+		if (k === 'f5' || matchesShortcut(evt, 'refreshData')) {
+			evt.preventDefault();
+			profiles.refresh().catch(() => {});
+			games.refresh().catch(() => {});
+			plugins.refetch().catch(() => {});
+			window.dispatchEvent(new CustomEvent('app:refresh'));
+			pushInfoToast({ message: m.app_toast_dataRefreshed() });
+			return;
+		}
+		// Cycle between profiles. Skip when focus is in an editable field so
+		// caret navigation keeps working there.
+		if (!isEditableTarget(evt.target)) {
+			if (matchesShortcut(evt, 'cycleProfilePrev')) {
+				evt.preventDefault();
+				profiles.cycle(-1).catch(() => {});
+				return;
+			}
+			if (matchesShortcut(evt, 'cycleProfileNext')) {
+				evt.preventDefault();
+				profiles.cycle(1).catch(() => {});
+				return;
+			}
+		}
+		// DPI zoom shortcuts.
+		if (matchesShortcut(evt, 'zoomIn')) {
+			evt.preventDefault();
+			nudgeDpiScale(1);
+			return;
+		}
+		if (matchesShortcut(evt, 'zoomOut')) {
+			evt.preventDefault();
+			nudgeDpiScale(-1);
+			return;
+		}
+		// Block Ctrl+shortcuts except Ctrl+C/V/X/A/Z (standard editing).
+		// Exception: if the event originates from an editable element
+		// (input / textarea / contenteditable), let every Ctrl+* through so
+		// Ctrl+Backspace (delete word), Ctrl+←/→ (jump word), Ctrl+Home/End
+		// etc. behave natively. The Console command input benefits the most
+		// but this helps every text field in the app.
+		if (evt.ctrlKey && !evt.shiftKey && !evt.altKey) {
+			const target = evt.target as HTMLElement | null;
+			const tag = target?.tagName;
+			const editable = tag === 'INPUT' || tag === 'TEXTAREA' || !!target?.isContentEditable;
+			if (!editable) {
+				const allowed = ['c', 'v', 'x', 'a', 'z'];
+				if (!allowed.includes(k)) {
+					evt.preventDefault();
+					return;
+				}
+			}
+		}
+		// Block Ctrl+Shift+I/J/C (devtools variants)
+		if (evt.ctrlKey && evt.shiftKey) {
+			if (['i', 'j', 'c'].includes(k)) {
+				evt.preventDefault();
+				return;
+			}
+		}
+	}}
+/>
+
+<svelte:body
+	oncontextmenu={(evt) => {
+		evt.preventDefault();
+	}}
+	onclick={(evt) => {
+		const anchor = (evt.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null;
+		if (!anchor) return;
+		const href = anchor.href;
+		if (
+			href &&
+			(href.startsWith('http://') || href.startsWith('https://')) &&
+			new URL(href).origin !== window.location.origin
+		) {
+			evt.preventDefault();
+			open(href);
+		}
+	}}
+/>
+
+<CustomBackground />
+
+{#if isStandalone}
+	<main class="z-app z-app-standalone">
+		<Titlebar />
+		<div class="z-standalone-body">
+			{@render children?.()}
+		</div>
+		<Toasts />
+	</main>
+{:else}
+	<main class="z-app">
+		<Titlebar />
+
+		<div class="z-app-body">
+			<Sidebar legendActive={!!(gamepadState.enabled && gamepadState.connected)} />
+
+			<div class="z-main">
+				<div class="z-content">
+					{@render children?.()}
+				</div>
+				<Statusbar />
+			</div>
+		</div>
+
+		{#if gamepadState.enabled && gamepadState.connected}
+			{@const type = gamepadState.controllerType}
+			<div class="z-gamepad-legend">
+				<div class="z-gamepad-legend-item">
+					<kbd class="z-gp-btn">{type === 'playstation' ? '✕' : 'A'}</kbd>
+					<span>{m.gamepad_legend_select()}</span>
+				</div>
+				<div class="z-gamepad-legend-item">
+					<kbd class="z-gp-btn">{type === 'playstation' ? '△' : 'Y'}</kbd>
+					<span>{m.gamepad_legend_multiselect()}</span>
+				</div>
+				<!-- Back button removed as per request -->
+				<div class="z-gamepad-legend-item">
+					<kbd class="z-gp-btn z-gp-dpad">{type === 'playstation' ? 'L3' : 'LS'}</kbd>
+					<span>{m.gamepad_legend_navigate()}</span>
+				</div>
+				<div class="z-gamepad-legend-item">
+					<kbd class="z-gp-btn z-gp-dpad">{type === 'playstation' ? 'R3' : 'RS'}</kbd>
+					<span>{m.gamepad_legend_scroll()}</span>
+				</div>
+				<div class="z-gamepad-legend-item">
+					<kbd class="z-gp-btn">{type === 'playstation' ? 'L1' : 'LB'}</kbd>
+					<kbd class="z-gp-btn">{type === 'playstation' ? 'R1' : 'RB'}</kbd>
+					<span>{m.gamepad_legend_tabs()}</span>
+				</div>
+				<div class="z-gamepad-legend-item">
+					<kbd class="z-gp-btn">{type === 'playstation' ? 'R2' : 'RT'}</kbd>
+					<span>Filtres</span>
+				</div>
+				<div class="z-gamepad-legend-item">
+					<kbd class="z-gp-btn"
+						>{type === 'playstation' ? 'Share' : type === 'xbox' ? 'View' : 'Select'}</kbd
+					>
+					<span>{m.dashboard_quickActions_title()}</span>
+				</div>
+			</div>
+		{/if}
+
+		<GlobalSearch />
+		<Toasts />
+		<InstallPopover />
+		<InstallModDialog />
+		<ImportProfileDialog />
+		<!-- <DoomEasterEgg /> -->
+
+		{#if gamepadKeyboard.open}
+			<GamepadKeyboard
+				open={gamepadKeyboard.open}
+				value={gamepadKeyboard.value}
+				onsubmit={(val) => gamepadKeyboard.submit(val)}
+				oncancel={() => gamepadKeyboard.cancel()}
+			/>
+		{/if}
+
+		{#if updates.next?.available}
+			<Modal
+				open={true}
+				onclose={() => (updates.next = null)}
+				title={i18nState.locale && m.updater_confirmDialog_title()}
+			>
+				{#snippet children()}
+					<div class="z-update-modal">
+						<p>
+							{updates.next!.version
+								? m.updater_confirmDialog_content_next({
+										next: updates.next!.version,
+										current: appVersion
+									})
+								: m.updater_confirmDialog_content_available()}
+						</p>
+						<p>{m.updater_confirmDialog_content()}</p>
+					</div>
+				{/snippet}
+				{#snippet actions()}
+					<Button variant="primary" onclick={installUpdate} disabled={updateInstalling}>
+						{#snippet icon()}
+							<Icon
+								icon={updateInstalling ? 'mdi:loading' : 'mdi:download'}
+								class={updateInstalling ? 'z-spin' : ''}
+							/>
+						{/snippet}
+						{i18nState.locale && m.updater_confirmDialog_button()}
+					</Button>
+				{/snippet}
+			</Modal>
+		{/if}
+	</main>
+{/if}
+
+<style>
+	.z-app-standalone {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+		overflow: hidden;
+	}
+
+	.z-standalone-body {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.z-app {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+		width: 100vw;
+		overflow: hidden;
+		background: var(--bg-base);
+		color: var(--text-primary);
+	}
+
+	.z-app-body {
+		display: flex;
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	.z-main {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	.z-content {
+		flex: 1;
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+
+	/* DPI scaling is handled via WebView zoom in the backend */
+
+	/* Gamepad button legend bar */
+	.z-gamepad-legend {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-xl);
+		padding: var(--space-sm) var(--space-lg);
+		background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+		backdrop-filter: blur(8px);
+		border-top: 1px solid var(--border-subtle);
+		z-index: var(--z-sticky);
+		font-size: 12px;
+		color: var(--text-muted);
+		animation: slideUp 0.2s ease;
+	}
+
+	@keyframes slideUp {
+		from {
+			transform: translateY(100%);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	.z-gamepad-legend-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.z-gp-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 24px;
+		height: 22px;
+		padding: 0 6px;
+		border-radius: var(--radius-sm);
+		background: var(--bg-elevated);
+		border: 1px solid var(--border-default);
+		color: var(--text-primary);
+		font-family: var(--font-body);
+		font-size: 11px;
+		font-weight: 700;
+		line-height: 1;
+	}
+
+	.z-gp-dpad {
+		font-size: 10px;
+		letter-spacing: -0.02em;
+	}
+</style>

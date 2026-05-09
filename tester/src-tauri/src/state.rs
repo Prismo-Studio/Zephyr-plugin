@@ -1,0 +1,153 @@
+use std::sync::{Arc, Mutex, MutexGuard};
+
+use eyre::{Context, Result};
+use tauri::{command, AppHandle, Manager};
+
+use crate::{
+    db::{self, Db},
+    prefs::Prefs,
+    profile::{self, install::queue::InstallQueue, sync, ModManager},
+    source::SourceRegistry,
+    thunderstore::{self, Thunderstore},
+};
+
+pub struct AppState {
+    pub http: reqwest::Client,
+    pub prefs: Mutex<Prefs>,
+    pub manager: Mutex<ModManager>,
+    pub thunderstore: Mutex<Thunderstore>,
+    pub source_registry: SourceRegistry,
+    pub db: Db,
+    pub install_queue: InstallQueue,
+    pub sync_auth: sync::auth::State,
+    pub sync_socket: sync::socket::State,
+    pub is_first_run: bool,
+}
+
+impl AppState {
+    pub fn lock_prefs(&self) -> MutexGuard<'_, Prefs> {
+        self.prefs.lock().unwrap()
+    }
+
+    pub fn lock_manager(&self) -> MutexGuard<'_, ModManager> {
+        self.manager.lock().unwrap()
+    }
+
+    pub fn lock_thunderstore(&self) -> MutexGuard<'_, Thunderstore> {
+        self.thunderstore.lock().unwrap()
+    }
+}
+
+pub fn setup(app: &AppHandle) -> Result<()> {
+    let http = reqwest::Client::builder()
+        .user_agent(concat!("PrismoStudio-Zephyr/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .context("failed to init http client")?;
+
+    let (db, db_existed) = db::init().context("failed to init database")?;
+
+    let (data, mut prefs, creds, migrated) = db.read()?;
+
+    prefs.init(&db, app).context("failed to init prefs")?;
+
+    let manager = profile::setup(data, &prefs, &db, app).context("failed to init profiles")?;
+    let thunderstore = Thunderstore::new();
+
+    let mut source_registry = SourceRegistry::new();
+
+    let ts_source = crate::source::thunderstore_adapter::ThunderstoreSource::new(app.to_owned());
+    source_registry.register(Arc::new(ts_source));
+
+    let cf_source = crate::source::curseforge::CurseForgeSource::new(
+        crate::util::keys::curseforge_key(),
+        http.clone(),
+    );
+    source_registry.register(Arc::new(cf_source));
+
+    let nx_source = crate::source::nexusmods::NexusModsSource::new(
+        crate::util::keys::nexusmods_key(),
+        http.clone(),
+    );
+    source_registry.register(Arc::new(nx_source));
+
+    let community_source = crate::source::community::CommunitySource::new(http.clone());
+    source_registry.register(Arc::new(community_source));
+
+    let state = AppState {
+        db,
+        http,
+        prefs: Mutex::new(prefs),
+        manager: Mutex::new(manager),
+        thunderstore: Mutex::new(thunderstore),
+        source_registry,
+        sync_auth: sync::auth::State::new(creds),
+        sync_socket: sync::socket::State::new(app.to_owned()),
+        install_queue: InstallQueue::new(app.to_owned()),
+        is_first_run: !db_existed && !migrated,
+    };
+
+    app.manage(state);
+
+    thunderstore::start(app);
+
+    let manager = app.lock_manager();
+    manager.active_game().update_window_title(app).ok();
+    app.sync_socket().subscribe(manager.active_profile());
+
+    Ok(())
+}
+
+pub trait ManagerExt<R> {
+    fn app_state(&self) -> &AppState;
+
+    fn http(&self) -> &reqwest::Client {
+        &self.app_state().http
+    }
+
+    fn lock_prefs(&self) -> MutexGuard<'_, Prefs> {
+        self.app_state().lock_prefs()
+    }
+
+    fn lock_manager(&self) -> MutexGuard<'_, ModManager> {
+        self.app_state().lock_manager()
+    }
+
+    fn lock_thunderstore(&self) -> MutexGuard<'_, Thunderstore> {
+        self.app_state().lock_thunderstore()
+    }
+
+    fn db(&self) -> &Db {
+        &self.app_state().db
+    }
+
+    fn install_queue(&self) -> &InstallQueue {
+        &self.app_state().install_queue
+    }
+
+    fn sync_auth(&self) -> &sync::auth::State {
+        &self.app_state().sync_auth
+    }
+
+    fn sync_socket(&self) -> &sync::socket::State {
+        &self.app_state().sync_socket
+    }
+
+    fn source_registry(&self) -> &SourceRegistry {
+        &self.app_state().source_registry
+    }
+}
+
+impl<T, R> ManagerExt<R> for T
+where
+    T: tauri::Manager<R>,
+    R: tauri::Runtime,
+{
+    fn app_state(&self) -> &AppState {
+        self.state::<AppState>().inner()
+    }
+}
+
+#[command]
+pub fn is_first_run(app: AppHandle) -> bool {
+    app.app_state().is_first_run
+}

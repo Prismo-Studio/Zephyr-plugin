@@ -3,3 +3,15 @@
 .idea/
 *.log
 node_modules/
+dist/
+
+# Tester (Tauri app) build artefacts
+tester/build/
+tester/.svelte-kit/
+tester/src-tauri/target/
+tester/src-tauri/gen/
+
+# Lockfiles for the local tooling — kept out of the registry repo so it
+# stays diff-friendly. Bring them back per-subdir if reproducible installs
+# matter to you.
+pnpm-lock.yaml

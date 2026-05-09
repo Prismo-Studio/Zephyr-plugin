@@ -1,0 +1,34 @@
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.vscode
+.env.*
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+.VSCodeCounter
+packages/
+src-tauri/gen
+./packages
+**/__pycache__/
+*.pyc
+*.pyo
+src-tauri/archipelago-runtime/
+wiki/
+
+# Local debug / scratch artifacts
+/svelte-errs*.txt
+/tsc_errors.txt
+/check_compiled.cjs
+/list_broken.cjs
+/language-fix/
+
+# Inlang regenerates its workspace on every build. Only settings.json is
+# user-edited and should be tracked.
+project.inlang/.gitignore
+project.inlang/.meta.json
+project.inlang/README.md
+project.inlang/cache/

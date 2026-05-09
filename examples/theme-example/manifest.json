@@ -1,0 +1,12 @@
+{
+	"id": "midnight-aurora",
+	"name": "Midnight Aurora",
+	"version": "1.0.0",
+	"type": "theme",
+	"author": {
+		"name": "Your Name",
+		"url": "https://github.com/your-handle"
+	},
+	"description": "Deep blue/purple theme inspired by aurora borealis.",
+	"entry": "theme.css"
+}

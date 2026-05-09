@@ -1,0 +1,51 @@
+{
+	"identifier": "main-capability",
+	"description": "Capability for the main window and the Console companion window",
+	"windows": ["main", "console"],
+	"permissions": [
+		"core:default",
+		"core:window:allow-close",
+		"core:window:allow-center",
+		"core:window:allow-minimize",
+		"core:window:allow-maximize",
+		"core:window:allow-set-size",
+		"core:window:allow-set-focus",
+		"core:window:allow-is-maximized",
+		"core:window:allow-unmaximize",
+		"core:window:allow-start-dragging",
+		"core:window:allow-toggle-maximize",
+		"core:window:allow-set-decorations",
+		"core:window:allow-set-fullscreen",
+		"core:window:allow-is-fullscreen",
+		"core:window:allow-inner-size",
+		"clipboard-manager:allow-write-text",
+		"clipboard-manager:allow-read-text",
+		"deep-link:default",
+		"updater:default",
+		"updater:allow-check",
+		"process:default",
+		"process:allow-restart",
+		"process:allow-exit",
+		"dialog:default",
+		"shell:default",
+		"http:default",
+		"http:allow-fetch",
+		{
+			"identifier": "http:default",
+			"allow": [
+				{
+					"url": "https://thunderstore.io/api/*"
+				},
+				{
+					"url": "https://raw.githubusercontent.com/prismo-studio/zephyr/main/*"
+				},
+				{
+					"url": "https://api.cloudinary.com/*"
+				}
+			],
+			"deny": []
+		},
+		"os:allow-locale",
+		"window-state:default"
+	]
+}

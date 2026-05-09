@@ -1,0 +1,726 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import 'tailwindcss';
+
+/* ============================================================
+   ZEPHYR v0.2. Teal Storm Design System
+   ============================================================ */
+
+/* ============================================================
+   CSS Custom Properties. Design Tokens
+   ============================================================ */
+:root {
+	/* ---- Typography ---- */
+	--font-display: 'DM Sans', 'Inter', system-ui, sans-serif;
+	--font-body: 'Outfit', 'Inter', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+	/* ---- Teal Storm Accent ---- */
+	--accent-50: #e6fffd;
+	--accent-100: #b3fff9;
+	--accent-200: #80fff5;
+	--accent-300: #4dfff1;
+	--accent-400: #1afffa;
+	--accent-500: #00e6e0;
+	--accent-600: #00b3ae;
+	--accent-700: #00807d;
+	--accent-800: #004d4b;
+	--accent-900: #001a19;
+
+	/* ---- Spacing scale ---- */
+	--space-xs: 4px;
+	--space-sm: 8px;
+	--space-md: 12px;
+	--space-lg: 16px;
+	--space-xl: 24px;
+	--space-2xl: 32px;
+	--space-3xl: 48px;
+
+	/* ---- Border radius ---- */
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+	--radius-xl: 20px;
+	--radius-full: 9999px;
+
+	/* ---- Shadows ---- */
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+	--shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+	--shadow-glow: 0 0 20px rgba(26, 255, 250, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(26, 255, 250, 0.25);
+
+	/* ---- Transitions ---- */
+	--transition-fast: 100ms ease;
+	--transition-normal: 200ms ease;
+	--transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+	/* ---- Z-index ---- */
+	--z-base: 0;
+	--z-dropdown: 50;
+	--z-sticky: 100;
+	--z-modal: 200;
+	--z-toast: 300;
+	--z-tooltip: 400;
+}
+
+/* ============================================================
+   Theme: Dark (default)
+   ============================================================ */
+[data-theme='dark'],
+:root {
+	--bg-base: #080e1a;
+	--bg-surface: #0d1526;
+	--bg-elevated: #111d33;
+	--bg-overlay: #162240;
+	--bg-hover: rgba(26, 255, 250, 0.04);
+	--bg-active: rgba(26, 255, 250, 0.08);
+
+	--border-subtle: rgba(255, 255, 255, 0.06);
+	--border-default: rgba(255, 255, 255, 0.1);
+	--border-strong: rgba(255, 255, 255, 0.16);
+	--border-accent: rgba(26, 255, 250, 0.3);
+
+	--text-primary: #eaf0f6;
+	--text-secondary: #8899aa;
+	--text-muted: #556677;
+	--text-accent: #1afffa;
+	--text-inverse: #080e1a;
+
+	--accent-300: #4dfffc;
+	--accent-400: #1afffa;
+	--accent-500: #00d4d0;
+	--accent-600: #00aaa8;
+	--accent-700: #008080;
+
+	--success: #00d4aa;
+	--warning: #ffb347;
+	--error: #ff5c5c;
+	--info: #4da3ff;
+
+	--glass-bg: rgba(13, 21, 38, 0.6);
+	--glass-border: rgba(255, 255, 255, 0.08);
+	--glass-blur: 16px;
+
+	--shadow-glow: 0 0 20px rgba(26, 255, 250, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(26, 255, 250, 0.25);
+}
+
+/* ============================================================
+   Theme: Light
+   ============================================================ */
+[data-theme='light'] {
+	--bg-base: #f4f7fa;
+	--bg-surface: #ffffff;
+	--bg-elevated: #f8fafc;
+	--bg-overlay: #e8edf4;
+	--bg-hover: rgba(0, 128, 125, 0.06);
+	--bg-active: rgba(0, 128, 125, 0.1);
+
+	--border-subtle: rgba(0, 0, 0, 0.06);
+	--border-default: rgba(0, 0, 0, 0.12);
+	--border-strong: rgba(0, 0, 0, 0.2);
+	--border-accent: rgba(0, 179, 174, 0.4);
+
+	--text-primary: #1a2438;
+	--text-secondary: #5a6a7a;
+	--text-muted: #8899aa;
+	--text-accent: #00807d;
+	--text-inverse: #f4f7fa;
+
+	--accent-300: #00b3ae;
+	--accent-400: #00807d;
+	--accent-500: #006663;
+	--accent-600: #004d4b;
+	--accent-700: #003433;
+
+	--success: #00a88a;
+	--warning: #e59a30;
+	--error: #e04040;
+	--info: #00807d;
+
+	--glass-bg: rgba(255, 255, 255, 0.7);
+	--glass-border: rgba(0, 0, 0, 0.08);
+	--glass-blur: 12px;
+
+	--shadow-glow: 0 0 20px rgba(0, 128, 125, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(0, 128, 125, 0.25);
+}
+
+/* ============================================================
+   Theme: Zephyr (Signature. Glassmorphism)
+   ============================================================ */
+[data-theme='zephyr'] {
+	--bg-base: #060c18;
+	--bg-surface: rgba(10, 18, 35, 0.8);
+	--bg-elevated: rgba(16, 28, 52, 0.7);
+	--bg-overlay: rgba(22, 38, 68, 0.6);
+	--bg-hover: rgba(26, 255, 250, 0.06);
+	--bg-active: rgba(26, 255, 250, 0.12);
+
+	--border-subtle: rgba(26, 255, 250, 0.06);
+	--border-default: rgba(26, 255, 250, 0.12);
+	--border-strong: rgba(26, 255, 250, 0.2);
+	--border-accent: rgba(26, 255, 250, 0.4);
+
+	--text-primary: #eaf0f6;
+	--text-secondary: #7ecbc8;
+	--text-muted: #4a8080;
+	--text-accent: #1afffa;
+	--text-inverse: #060c18;
+
+	--accent-300: #4dfffc;
+	--accent-400: #1afffa;
+	--accent-500: #00d4d0;
+	--accent-600: #00aaa8;
+	--accent-700: #008080;
+
+	--success: #00ffcc;
+	--warning: #ffd166;
+	--error: #ff6b6b;
+	--info: #5cbbff;
+
+	--glass-bg: rgba(10, 18, 35, 0.5);
+	--glass-border: rgba(26, 255, 250, 0.1);
+	--glass-blur: 24px;
+
+	--shadow-glow: 0 0 20px rgba(26, 255, 250, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(26, 255, 250, 0.25);
+}
+
+/* ============================================================
+   Theme: Midnight Ocean
+   ============================================================ */
+[data-theme='midnight'] {
+	--bg-base: #040810;
+	--bg-surface: #081020;
+	--bg-elevated: #0c1830;
+	--bg-overlay: #102040;
+	--bg-hover: rgba(77, 163, 255, 0.05);
+	--bg-active: rgba(77, 163, 255, 0.1);
+
+	--border-subtle: rgba(77, 163, 255, 0.06);
+	--border-default: rgba(77, 163, 255, 0.12);
+	--border-strong: rgba(77, 163, 255, 0.2);
+	--border-accent: rgba(77, 163, 255, 0.4);
+
+	--text-primary: #c8d8e8;
+	--text-secondary: #6888aa;
+	--text-muted: #3a5577;
+	--text-accent: #4da3ff;
+	--text-inverse: #040810;
+
+	--accent-300: #7cc1ff;
+	--accent-400: #4da3ff;
+	--accent-500: #2980e5;
+	--accent-600: #1a66cc;
+	--accent-700: #0d4da3;
+
+	--success: #00d4aa;
+	--warning: #ffb347;
+	--error: #ff5c5c;
+	--info: #4da3ff;
+
+	--glass-bg: rgba(8, 16, 32, 0.6);
+	--glass-border: rgba(77, 163, 255, 0.08);
+	--glass-blur: 20px;
+
+	--shadow-glow: 0 0 20px rgba(77, 163, 255, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(77, 163, 255, 0.25);
+}
+
+[data-theme='crimson'] {
+	--bg-base: #0e0e10;
+	--bg-surface: #141416;
+	--bg-elevated: #1a1a1e;
+	--bg-overlay: #222226;
+	--bg-hover: rgba(250, 55, 80, 0.08);
+	--bg-active: rgba(250, 55, 80, 0.14);
+
+	--border-subtle: rgba(255, 255, 255, 0.05);
+	--border-default: rgba(255, 255, 255, 0.08);
+	--border-strong: rgba(255, 255, 255, 0.14);
+	--border-accent: rgba(250, 55, 80, 0.5);
+
+	--text-primary: #e8e8e8;
+	--text-secondary: #888;
+	--text-muted: #555;
+	--text-accent: #fa3750;
+	--text-inverse: #0e0e10;
+
+	--accent-300: #ff5070;
+	--accent-400: #fa3750;
+	--accent-500: #d42040;
+	--accent-600: #b01830;
+	--accent-700: #8c1028;
+
+	--success: #44cc66;
+	--warning: #ffaa33;
+	--error: #ff4455;
+	--info: #fa3750;
+
+	--glass-bg: rgba(14, 14, 16, 0.7);
+	--glass-border: rgba(250, 55, 80, 0.1);
+	--glass-blur: 16px;
+
+	--shadow-glow: 0 0 20px rgba(250, 55, 80, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(250, 55, 80, 0.25);
+}
+
+[data-theme='amethyst'] {
+	--bg-base: #0f0d18;
+	--bg-surface: #151320;
+	--bg-elevated: #1c192b;
+	--bg-overlay: #242038;
+	--bg-hover: rgba(110, 75, 220, 0.08);
+	--bg-active: rgba(110, 75, 220, 0.14);
+
+	--border-subtle: rgba(255, 255, 255, 0.05);
+	--border-default: rgba(255, 255, 255, 0.08);
+	--border-strong: rgba(255, 255, 255, 0.14);
+	--border-accent: rgba(110, 75, 220, 0.5);
+
+	--text-primary: #eae7f0;
+	--text-secondary: #9088a8;
+	--text-muted: #5e5678;
+	--text-accent: #8b6cef;
+	--text-inverse: #0f0d18;
+
+	--accent-300: #a88aff;
+	--accent-400: #8b6cef;
+	--accent-500: #6e4bdc;
+	--accent-600: #5535b8;
+	--accent-700: #3f2594;
+
+	--success: #44ddaa;
+	--warning: #ffbb55;
+	--error: #ff6666;
+	--info: #8b6cef;
+
+	--glass-bg: rgba(15, 13, 24, 0.7);
+	--glass-border: rgba(110, 75, 220, 0.1);
+	--glass-blur: 16px;
+
+	--shadow-glow: 0 0 20px rgba(139, 108, 239, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(139, 108, 239, 0.25);
+}
+
+[data-theme='pinky'] {
+	--bg-base: #0d080b;
+	--bg-surface: #130b10;
+	--bg-elevated: #1a1016;
+	--bg-overlay: #22151c;
+	--bg-hover: rgba(240, 95, 165, 0.06);
+	--bg-active: rgba(240, 95, 165, 0.1);
+
+	--border-subtle: rgba(255, 255, 255, 0.05);
+	--border-default: rgba(255, 255, 255, 0.08);
+	--border-strong: rgba(255, 255, 255, 0.14);
+	--border-accent: rgba(240, 95, 165, 0.5);
+
+	--text-primary: #f5e8ef;
+	--text-secondary: #b08090;
+	--text-muted: #785566;
+	--text-accent: #ff7eb6;
+	--text-inverse: #170d14;
+
+	--accent-300: #ffa4ce;
+	--accent-400: #ff7eb6;
+	--accent-500: #f05fa5;
+	--accent-600: #c94580;
+	--accent-700: #9d305f;
+
+	--success: #44ddaa;
+	--warning: #ffbb55;
+	--error: #ff6666;
+	--info: #ff7eb6;
+
+	--glass-bg: rgba(23, 13, 20, 0.7);
+	--glass-border: rgba(240, 95, 165, 0.1);
+	--glass-blur: 16px;
+
+	--shadow-glow: 0 0 20px rgba(255, 126, 182, 0.15);
+	--shadow-glow-strong: 0 0 40px rgba(255, 126, 182, 0.25);
+}
+
+[data-theme='hotdog'] {
+	--bg-base: #ff0000;
+	--bg-surface: #cc0000;
+	--bg-elevated: #ff3333;
+	--bg-overlay: #aa0000;
+	--bg-hover: rgba(255, 255, 0, 0.15);
+	--bg-active: rgba(255, 255, 0, 0.25);
+
+	--border-subtle: rgba(255, 255, 0, 0.2);
+	--border-default: rgba(255, 255, 0, 0.4);
+	--border-strong: rgba(255, 255, 0, 0.6);
+	--border-accent: #ffff00;
+
+	--text-primary: #ffff00;
+	--text-secondary: #ffee55;
+	--text-muted: #cc9900;
+	--text-accent: #ffff00;
+	--text-inverse: #ff0000;
+
+	--accent-300: #ffff55;
+	--accent-400: #ffff00;
+	--accent-500: #e6e600;
+	--accent-600: #b8b800;
+	--accent-700: #8a8a00;
+
+	--success: #ffff00;
+	--warning: #ff8800;
+	--error: #ffffff;
+	--info: #ffff00;
+
+	--glass-bg: rgba(204, 0, 0, 0.8);
+	--glass-border: rgba(255, 255, 0, 0.3);
+	--glass-blur: 12px;
+
+	--shadow-glow: 0 0 20px rgba(255, 255, 0, 0.25);
+	--shadow-glow-strong: 0 0 40px rgba(255, 255, 0, 0.4);
+}
+
+[data-bg-media='1'] body,
+[data-bg-media='1'] .z-app,
+[data-bg-media='1'] .z-app-standalone {
+	background: transparent !important;
+}
+
+[data-bg-media='1'] .z-app,
+[data-bg-media='1'] .z-app-standalone {
+	position: relative;
+	z-index: 1;
+}
+
+[data-bg-media='1'] {
+	--bg-surface: rgba(13, 21, 38, 0.6);
+	--bg-elevated: rgba(17, 29, 51, 0.75);
+	--bg-overlay: rgba(22, 34, 64, 0.8);
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	font-size: 14px;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+	font-family: var(--font-body);
+	background: var(--bg-base);
+	color: var(--text-primary);
+	overflow: hidden;
+	user-select: none;
+	-webkit-user-drag: none;
+}
+
+body,
+* {
+	-webkit-user-drag: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable],
+.z-search-input,
+.z-entry-input,
+.markdown {
+	user-select: text !important;
+	-webkit-user-select: text !important;
+	-webkit-user-drag: auto !important;
+	cursor: auto !important;
+}
+
+.markdown,
+.markdown * {
+	-webkit-user-drag: auto !important;
+	user-select: text !important;
+	-webkit-user-select: text !important;
+	cursor: auto !important;
+}
+
+.markdown a,
+.markdown a *,
+.markdown button,
+.markdown button *,
+.markdown [role='button'],
+.markdown [role='button'] * {
+	cursor: pointer !important;
+}
+
+/* Allow text selection in interactive elements */
+input,
+textarea,
+select,
+[contenteditable],
+.z-search-input,
+.z-entry-input {
+	user-select: text;
+	cursor: text;
+}
+
+button,
+a,
+[role='button'] {
+	cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+code,
+pre,
+.font-mono {
+	font-family: var(--font-mono);
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--border-strong);
+	border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--text-muted);
+}
+
+/* ============================================================
+   Selection
+   ============================================================ */
+::selection {
+	background: color-mix(in srgb, var(--accent-400) 30%, transparent);
+	color: var(--text-primary);
+}
+
+/* ============================================================
+   Focus
+   ============================================================ */
+:focus-visible {
+	outline: 2px solid var(--accent-400);
+	outline-offset: 2px;
+}
+
+/* Gamepad-driven focus. Always show focus ring when gamepad is active */
+.gamepad-active :focus {
+	outline: 2px solid var(--accent-400);
+	outline-offset: 2px;
+}
+
+/* Dropdowns use border-color instead of outline for cleaner look */
+.gamepad-active .z-dropdown-trigger:focus {
+	outline: none;
+	border-color: var(--accent-400);
+}
+
+/* ============================================================
+   Utility Classes
+   ============================================================ */
+.glass {
+	background: var(--glass-bg);
+	backdrop-filter: blur(var(--glass-blur));
+	-webkit-backdrop-filter: blur(var(--glass-blur));
+	border: 1px solid var(--glass-border);
+}
+
+.glow {
+	box-shadow: var(--shadow-glow);
+}
+
+.glow-strong {
+	box-shadow: var(--shadow-glow-strong);
+}
+
+.text-gradient {
+	background: linear-gradient(135deg, var(--accent-400), var(--accent-200));
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes slideUp {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes scaleIn {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes pulse-glow {
+	0%,
+	100% {
+		box-shadow: 0 0 8px rgba(26, 255, 250, 0.2);
+	}
+	50% {
+		box-shadow: 0 0 20px rgba(26, 255, 250, 0.4);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+
+.animate-fade-in {
+	animation: fadeIn var(--transition-normal) ease both;
+}
+.animate-slide-up {
+	animation: slideUp var(--transition-normal) ease both;
+}
+.animate-slide-down {
+	animation: slideDown var(--transition-normal) ease both;
+}
+.animate-scale-in {
+	animation: scaleIn var(--transition-normal) ease both;
+}
+.animate-pulse-glow {
+	animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   Markdown Rendering
+   ============================================================ */
+.markdown h1 {
+	font-size: 1.75rem;
+	margin-top: 1.5em;
+	margin-bottom: 0.5em;
+}
+.markdown h2 {
+	font-size: 1.4rem;
+	margin-top: 1.3em;
+	margin-bottom: 0.4em;
+}
+.markdown h3 {
+	font-size: 1.15rem;
+	margin-top: 1em;
+	margin-bottom: 0.3em;
+}
+.markdown p {
+	margin-bottom: 0.75em;
+	line-height: 1.7;
+	color: var(--text-secondary);
+}
+.markdown ul,
+.markdown ol {
+	padding-left: 1.5em;
+	margin-bottom: 0.75em;
+	color: var(--text-secondary);
+}
+.markdown li {
+	margin-bottom: 0.25em;
+}
+.markdown a {
+	color: var(--text-accent);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+.markdown a:hover {
+	opacity: 0.8;
+}
+.markdown code {
+	font-family: var(--font-mono);
+	font-size: 0.85em;
+	background: var(--bg-overlay);
+	padding: 0.15em 0.4em;
+	border-radius: var(--radius-sm);
+	color: var(--accent-300);
+}
+.markdown pre {
+	background: var(--bg-overlay);
+	padding: 1em;
+	border-radius: var(--radius-md);
+	overflow-x: auto;
+	margin-bottom: 1em;
+	border: 1px solid var(--border-subtle);
+}
+.markdown pre code {
+	background: none;
+	padding: 0;
+}
+.markdown img {
+	max-width: 100%;
+	border-radius: var(--radius-md);
+}
+.markdown blockquote {
+	border-left: 3px solid var(--accent-600);
+	padding-left: 1em;
+	color: var(--text-muted);
+	margin-bottom: 0.75em;
+}
+.markdown hr {
+	border: none;
+	border-top: 1px solid var(--border-subtle);
+	margin: 1.5em 0;
+}

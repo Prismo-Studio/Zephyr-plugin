@@ -1,0 +1,12 @@
+{
+	"id": "example-game",
+	"name": "Example Game",
+	"version": "1.0.0",
+	"type": "game",
+	"author": {
+		"name": "Your Name",
+		"url": "https://github.com/your-handle"
+	},
+	"description": "Adds Example Game to Zephyr's supported game list.",
+	"entry": "game.json"
+}

@@ -1,0 +1,50 @@
+[config]
+schemaVersion = "0.0.1"
+
+[package]
+namespace = "PrismoStudios"
+name = "Zephyr"
+versionNumber = "1.2.14"
+description = "A fast, modern mod manager for all your games."
+websiteUrl = "https://github.com/Prismo-Studio/Zephyr"
+containsNsfwContent = false
+
+[package.dependencies]
+
+[build]
+icon = "src-tauri/icons/128x128@2x.png"
+readme = "README.md"
+outdir = "build"
+
+[[build.copy]]
+source = "CHANGELOG.md"
+target = "CHANGELOG.md"
+
+[[build.copy]]
+source = "LICENSE.md"
+target = "LICENSE.md"
+
+[[build.copy]]
+source = "src-tauri/target/release/bundle/nsis"
+target = ""
+
+[publish]
+repository = "https://thunderstore.io"
+communities = [
+    "boneworks",
+    "h3vr",
+    "lethal-company",
+    "peak",
+    "repo",
+    "riskofrain2",
+    "northstar",
+    "valheim",
+]
+
+[publish.categories]
+h3vr = ["tools"]
+lethal-company = ["tools"]
+peak = ["tools"]
+repo = ["tools"]
+riskofrain2 = ["tools"]
+valheim = ["tools"]

@@ -1,0 +1,13 @@
+/* Sample Zephyr theme.
+ * Override CSS custom properties from src/app.css to retheme the app.
+ * Zephyr applies the theme by setting [data-theme] on the document root. */
+:root[data-theme='midnight-aurora'] {
+	--bg-base: #0b1020;
+	--bg-surface: #141a30;
+	--bg-elevated: #1c2340;
+	--border-default: #2b3358;
+	--border-subtle: #1f2541;
+	--text-primary: #e6e9f5;
+	--text-muted: #9aa3c2;
+	--accent: #7d8cff;
+}

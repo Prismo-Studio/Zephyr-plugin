@@ -1,0 +1,17 @@
+{
+	"id": "example-mod",
+	"name": "Example Mod",
+	"version": "1.0.0",
+	"type": "mod",
+	"author": {
+		"name": "Your Name",
+		"url": "https://github.com/your-handle"
+	},
+	"description": "An exclusive mod hosted via the Zephyr plugin registry.",
+	"game": "example-game",
+	"package": {
+		"url": "https://github.com/your-handle/your-mod/releases/download/v1.0.0/your-mod.zip",
+		"sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+	},
+	"dependencies": []
+}

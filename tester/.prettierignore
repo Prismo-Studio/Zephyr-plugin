@@ -1,0 +1,11 @@
+# Ignore files for PNPM, NPM and YARN
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+target/
+
+# Auto-generated
+src/lib/paraglide/
+
+# Bundled Archipelago runtime (Python + Jinja templates, not our code)
+src-tauri/archipelago-runtime/

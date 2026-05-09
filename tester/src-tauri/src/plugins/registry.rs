@@ -1,0 +1,102 @@
+use std::{path::PathBuf, sync::Mutex};
+
+use eyre::{Context, Result};
+use tauri::{AppHandle, Manager};
+use tracing::{info, warn};
+
+use super::{PluginType, RegistryEntry};
+use crate::{
+    constants::{PLUGIN_REGISTRY_RAW_BASE, PLUGIN_REGISTRY_URL},
+    state::ManagerExt,
+    util,
+};
+
+fn fallback_iconify(kind: PluginType) -> &'static str {
+    match kind {
+        PluginType::Feature => "mdi:puzzle",
+        PluginType::Theme => "mdi:palette",
+        PluginType::Game => "mdi:gamepad-variant",
+        PluginType::Mod => "mdi:package-variant",
+    }
+}
+
+const CACHE_FILE_NAME: &str = "plugin-registry.json";
+
+#[derive(Default)]
+pub struct PluginRegistryState {
+    pub entries: Mutex<Vec<RegistryEntry>>,
+}
+
+#[derive(serde::Deserialize)]
+struct RegistryFile {
+    plugins: Vec<RegistryEntry>,
+}
+
+pub fn icon_url(entry: &RegistryEntry) -> String {
+    // Locally-loaded plugins have no HTTP origin to resolve their icon
+    // against; render a type-appropriate Iconify icon instead.
+    if entry.local_path.is_some() {
+        return fallback_iconify(entry.kind).to_string();
+    }
+    let Some(icon) = entry.icon.as_deref() else {
+        return fallback_iconify(entry.kind).to_string();
+    };
+    // Absolute URL or app-root path (local static asset) → use as-is.
+    if icon.starts_with("http://") || icon.starts_with("https://") || icon.starts_with('/') {
+        return icon.to_string();
+    }
+    format!("{}{}/{}", PLUGIN_REGISTRY_RAW_BASE, entry.path, icon)
+}
+
+fn cache_path() -> PathBuf {
+    util::path::default_app_data_dir().join(CACHE_FILE_NAME)
+}
+
+pub fn load_cache() -> Option<Vec<RegistryEntry>> {
+    let bytes = std::fs::read(cache_path()).ok()?;
+    serde_json::from_slice(&bytes).ok()
+}
+
+fn save_cache(plugins: &[RegistryEntry]) -> Result<()> {
+    let json = serde_json::to_string(plugins).context("serialize registry cache")?;
+    std::fs::write(cache_path(), json).context("write registry cache")?;
+    Ok(())
+}
+
+pub async fn fetch_and_update(app: AppHandle) -> Result<()> {
+    info!("fetching plugin registry from {}", PLUGIN_REGISTRY_URL);
+
+    let response: RegistryFile = app
+        .http()
+        .get(PLUGIN_REGISTRY_URL)
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    info!("loaded {} plugins from registry", response.plugins.len());
+
+    if let Err(err) = save_cache(&response.plugins) {
+        warn!("failed to save plugin registry cache: {err:#}");
+    }
+
+    {
+        let state = app.state::<PluginRegistryState>();
+        let mut entries = state.entries.lock().unwrap();
+        // Keep any plugins the user added via "Open plugin folder" — those
+        // aren't in the upstream registry and would otherwise vanish on every
+        // refresh.
+        let local: Vec<_> = entries
+            .iter()
+            .filter(|e| e.local_path.is_some())
+            .cloned()
+            .collect();
+        let mut combined = response.plugins;
+        combined.extend(local);
+        *entries = combined;
+    }
+
+    super::commands::emit_changed(&app)?;
+    Ok(())
+}
