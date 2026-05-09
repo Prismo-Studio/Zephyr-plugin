@@ -8,5 +8,6 @@
 		"url": "https://github.com/thefable1/Zephyr-plugin-test"
 	},
 	"description": "Theme with a hot magenta + electric cyan palette.",
+	"icon": "icon.svg",
 	"entry": "theme.css"
 }

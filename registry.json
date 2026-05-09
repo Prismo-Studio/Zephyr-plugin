@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-05-08T23:47:35.953Z",
+  "generated": "2026-05-09T00:00:46.762Z",
   "plugins": [
     {
       "id": "archipelago",
@@ -27,6 +27,7 @@
         "url": "https://github.com/thefable1/Zephyr-plugin-test"
       },
       "description": "Theme with a hot magenta + electric cyan palette.",
+      "icon": "icon.svg",
       "entry": "theme.css",
       "path": "themes/neon-pulse"
     }
