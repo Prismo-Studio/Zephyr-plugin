@@ -39,6 +39,10 @@
 	let startedAt = 0;
 	let tickInterval: number | null = null;
 	let toastTimer: number | null = null;
+	let nativeSessionId: string | null = null;
+
+	let offGameLaunched: (() => void) | null = null;
+	let offGameExited: (() => void) | null = null;
 
 	onMount(async () => {
 		try {
@@ -46,9 +50,28 @@
 			if (saved?.settings) settings = { ...DEFAULTS, ...saved.settings };
 		} catch {}
 		await refreshFiles();
+
+		offGameLaunched = zephyr.on('game.launched', async (evt) => {
+			if (!settings.autoRecord || recording) return;
+			showToast(`Waiting for ${evt.gameName} window…`);
+			try {
+				await startRecording(evt.gameName);
+				showToast(`Recording ${evt.gameName}`);
+			} catch (err) {
+				showToast(err instanceof Error ? err.message : String(err), 'error');
+			}
+		});
+
+		offGameExited = zephyr.on('game.exited', async (evt) => {
+			if (!recording) return;
+			showToast(`${evt.gameName} closed, saving capture…`);
+			await stopRecording();
+		});
 	});
 
 	onDestroy(() => {
+		offGameLaunched?.();
+		offGameExited?.();
 		stopRecording().catch(() => {});
 		if (tickInterval) clearInterval(tickInterval);
 		if (toastTimer) clearTimeout(toastTimer);
@@ -120,13 +143,50 @@
 		return '';
 	}
 
-	async function startRecording() {
+	async function startRecording(windowTitle?: string) {
 		if (recording) return;
+
+		if (windowTitle) {
+			try {
+				const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+				const filename = `capture-${stamp}.mp4`;
+				const result = await zephyr.recording.start({
+					filename,
+					fps: settings.fps,
+					quality: settings.quality,
+					windowTitle,
+					withAudio: false
+				});
+				nativeSessionId = result.sessionId;
+				recording = true;
+				startedAt = Date.now();
+				elapsed = 0;
+				tickInterval = window.setInterval(() => {
+					elapsed = Date.now() - startedAt;
+				}, 250);
+				return;
+			} catch (err) {
+				showToast(
+					'Native capture failed, falling back to picker: ' +
+						(err instanceof Error ? err.message : String(err)),
+					'info'
+				);
+			}
+		}
+
 		try {
-			// @ts-expect-error displaySurface is in the getDisplayMedia spec
 			mediaStream = await navigator.mediaDevices.getDisplayMedia({
-				video: { frameRate: { ideal: settings.fps }, displaySurface: 'monitor' },
-				audio: false
+				// @ts-expect-error displaySurface + selfBrowserSurface + systemAudio are in the spec but not in lib.dom yet
+				video: { frameRate: { ideal: settings.fps }, displaySurface: 'window' },
+				audio: true,
+				// @ts-expect-error
+				selfBrowserSurface: 'exclude',
+				// @ts-expect-error
+				systemAudio: 'include',
+				// @ts-expect-error
+				surfaceSwitching: 'exclude',
+				// @ts-expect-error
+				monitorTypeSurfaces: 'exclude'
 			});
 
 			if (settings.captureMic) {
@@ -134,7 +194,7 @@
 					const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
 					for (const track of mic.getAudioTracks()) mediaStream!.addTrack(track);
 				} catch {
-					showToast('Mic capture denied — recording video only', 'info');
+					showToast('Mic capture denied, recording video only', 'info');
 				}
 			}
 
@@ -198,6 +258,23 @@
 		if (tickInterval) clearInterval(tickInterval);
 		tickInterval = null;
 		elapsed = 0;
+
+		if (nativeSessionId) {
+			const id = nativeSessionId;
+			nativeSessionId = null;
+			try {
+				const result = await zephyr.recording.stop(id);
+				await zephyr.notify(`Saved ${result.filename}`, { title: 'Captures' });
+				await refreshFiles();
+			} catch (err) {
+				showToast(
+					'Stop failed: ' + (err instanceof Error ? err.message : String(err)),
+					'error'
+				);
+			}
+			return;
+		}
+
 		try {
 			mediaRecorder?.stop();
 		} catch {}
@@ -256,7 +333,7 @@
 			description="Pick a screen or window when prompted. Click Stop to save the file locally."
 		>
 			{#snippet control()}
-				<Button variant="primary" disabled={recording} onclick={startRecording}>
+				<Button variant="primary" disabled={recording} onclick={() => startRecording()}>
 					{#snippet children()}Start{/snippet}
 				</Button>
 				<Button variant="danger" disabled={!recording} onclick={stopRecording}>
@@ -265,17 +342,11 @@
 			{/snippet}
 		</Row>
 		<Row
-			title="Auto-record on game launch"
-			description="Future: kick off recording when Zephyr launches a modded game (needs a launch event from the host)."
+			title="Auto-record on game launch (coming soon)"
+			description="Will automatically record gameplay when you launch a modded game from Zephyr. Not enabled yet, the manual capture above works."
 		>
 			{#snippet control()}
-				<Toggle
-					checked={settings.autoRecord}
-					onchange={(v) => {
-						settings.autoRecord = v;
-						persistSettings();
-					}}
-				/>
+				<Toggle checked={false} disabled />
 			{/snippet}
 		</Row>
 		<Row title="Quality" description="Target resolution. Actual size depends on what you share.">
