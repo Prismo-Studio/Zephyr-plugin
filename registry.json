@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-05-14T04:12:35.455Z",
+  "generated": "2026-05-14T12:26:04.503Z",
   "plugins": [
     {
       "id": "archipelago",
@@ -20,7 +20,7 @@
     {
       "id": "captures",
       "name": "Captures",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "type": "feature",
       "author": {
         "name": "MathisBls"
