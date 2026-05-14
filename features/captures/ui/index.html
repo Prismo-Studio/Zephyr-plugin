@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Captures</title>
+		<link rel="stylesheet" href="/preview/css/zephyr.css" />
+		<style>
+			body {
+				margin: 0;
+				padding: 24px 28px 32px;
+				background: var(--bg-base);
+				color: var(--text-primary);
+				font-family: var(--font-body);
+			}
+
+			.cap-page {
+				display: flex;
+				flex-direction: column;
+				gap: 20px;
+				max-width: 880px;
+				margin: 0 auto;
+			}
+
+			.cap-header {
+				display: flex;
+				align-items: flex-start;
+				justify-content: space-between;
+				gap: 16px;
+			}
+
+			.cap-header h1 {
+				font-family: var(--font-display);
+				font-size: 26px;
+				margin: 0 0 4px;
+			}
+
+			.cap-header p {
+				margin: 0;
+				color: var(--text-muted);
+				font-size: 13px;
+			}
+
+			.cap-status-pill {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				padding: 6px 14px;
+				border-radius: 999px;
+				font-size: 12px;
+				font-weight: 600;
+				background: var(--bg-elevated);
+				border: 1px solid var(--border-subtle);
+				color: var(--text-secondary);
+			}
+
+			.cap-status-pill .dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: var(--text-muted);
+			}
+
+			.cap-status-pill.recording {
+				border-color: var(--error);
+				color: var(--error);
+				background: rgba(255, 92, 92, 0.08);
+			}
+
+			.cap-status-pill.recording .dot {
+				background: var(--error);
+				animation: pulse 1.2s ease-in-out infinite;
+			}
+
+			@keyframes pulse {
+				0%, 100% { opacity: 1; transform: scale(1); }
+				50% { opacity: 0.4; transform: scale(0.85); }
+			}
+
+			.cap-stats {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 12px;
+			}
+
+			.cap-stat {
+				padding: 16px 18px;
+				border-radius: var(--radius-lg);
+				background: var(--bg-elevated);
+				border: 1px solid var(--border-subtle);
+			}
+
+			.cap-stat-label {
+				font-size: 11px;
+				color: var(--text-muted);
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				font-weight: 600;
+				margin-bottom: 6px;
+			}
+
+			.cap-stat-value {
+				font-size: 22px;
+				font-weight: 700;
+				color: var(--text-primary);
+				font-family: var(--font-display);
+			}
+
+			.cap-section {
+				background: var(--bg-elevated);
+				border: 1px solid var(--border-subtle);
+				border-radius: var(--radius-lg);
+				padding: 18px 20px;
+			}
+
+			.cap-section-title {
+				font-size: 13px;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.04em;
+				color: var(--text-secondary);
+				margin: 0 0 12px;
+			}
+
+			.cap-row {
+				display: flex;
+				align-items: flex-start;
+				justify-content: space-between;
+				gap: 16px;
+				padding: 12px 0;
+				border-bottom: 1px solid var(--border-subtle);
+			}
+
+			.cap-row:last-child {
+				border-bottom: none;
+				padding-bottom: 0;
+			}
+
+			.cap-row:first-child {
+				padding-top: 0;
+			}
+
+			.cap-row-text { flex: 1; min-width: 0; }
+			.cap-row-title { font-size: 14px; font-weight: 600; margin: 0 0 3px; }
+			.cap-row-desc { font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.5; }
+
+			.cap-toggle {
+				width: 42px;
+				height: 24px;
+				border-radius: 999px;
+				background: var(--bg-overlay);
+				border: 1px solid var(--border-default);
+				position: relative;
+				cursor: pointer;
+				flex-shrink: 0;
+				transition: background var(--transition-fast), border-color var(--transition-fast);
+			}
+			.cap-toggle::after {
+				content: '';
+				position: absolute;
+				top: 2px;
+				left: 2px;
+				width: 18px;
+				height: 18px;
+				border-radius: 50%;
+				background: var(--text-muted);
+				transition: transform var(--transition-fast), background var(--transition-fast);
+			}
+			.cap-toggle.on {
+				background: var(--accent-400);
+				border-color: var(--accent-400);
+			}
+			.cap-toggle.on::after { transform: translateX(18px); background: var(--text-inverse); }
+
+			.cap-select {
+				padding: 8px 12px;
+				border-radius: var(--radius-md);
+				border: 1px solid var(--border-default);
+				background: var(--bg-elevated);
+				color: var(--text-primary);
+				font-family: inherit;
+				font-size: 13px;
+				min-width: 160px;
+			}
+
+			.cap-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				padding: 9px 16px;
+				border-radius: var(--radius-md);
+				border: 1px solid var(--border-default);
+				background: var(--bg-elevated);
+				color: var(--text-primary);
+				font-family: inherit;
+				font-size: 13px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all var(--transition-fast);
+			}
+			.cap-btn:hover { border-color: var(--accent-400); color: var(--accent-400); }
+			.cap-btn-primary {
+				background: linear-gradient(135deg, var(--accent-400), var(--accent-600));
+				border-color: transparent;
+				color: var(--text-inverse);
+			}
+			.cap-btn-primary:hover { color: var(--text-inverse); filter: brightness(1.1); }
+
+			.cap-list { display: flex; flex-direction: column; gap: 8px; }
+
+			.cap-item {
+				display: grid;
+				grid-template-columns: 64px 1fr auto;
+				gap: 14px;
+				align-items: center;
+				padding: 10px 12px;
+				border-radius: var(--radius-md);
+				background: var(--bg-base);
+				border: 1px solid var(--border-subtle);
+				transition: border-color var(--transition-fast);
+			}
+			.cap-item:hover { border-color: var(--border-default); }
+
+			.cap-item-thumb {
+				width: 64px;
+				height: 40px;
+				border-radius: 6px;
+				background: linear-gradient(135deg, var(--bg-overlay), var(--bg-elevated));
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--text-muted);
+				font-size: 18px;
+			}
+
+			.cap-item-title { font-size: 13px; font-weight: 600; margin: 0 0 2px; }
+			.cap-item-meta { font-size: 11px; color: var(--text-muted); margin: 0; }
+			.cap-item-actions { display: flex; gap: 4px; }
+			.cap-icon-btn {
+				width: 30px;
+				height: 30px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 6px;
+				border: none;
+				background: transparent;
+				color: var(--text-muted);
+				cursor: pointer;
+				transition: all var(--transition-fast);
+			}
+			.cap-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+			.cap-empty {
+				text-align: center;
+				padding: 32px 16px;
+				color: var(--text-muted);
+				font-size: 13px;
+			}
+
+			.cap-sim-banner {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 12px;
+				padding: 10px 14px;
+				border-radius: var(--radius-md);
+				background: rgba(26, 255, 250, 0.06);
+				border: 1px dashed var(--border-accent);
+				font-size: 12px;
+				color: var(--text-secondary);
+			}
+			.cap-sim-banner code {
+				font-family: var(--font-mono);
+				font-size: 11px;
+				color: var(--text-accent);
+				background: rgba(0, 0, 0, 0.2);
+				padding: 1px 6px;
+				border-radius: 4px;
+			}
+		</style>
+		<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+	</head>
+	<body>
+		<div class="cap-page">
+			<div class="cap-header">
+				<div>
+					<h1>Captures</h1>
+					<p>Auto-record gameplay when you launch a modded game.</p>
+				</div>
+				<span class="cap-status-pill" id="cap-status">
+					<span class="dot"></span>
+					<span id="cap-status-label">Idle</span>
+				</span>
+			</div>
+
+			<div class="cap-sim-banner">
+				<span>Preview mode — no real recording. Use <code>Simulate launch</code> to test the flow.</span>
+				<button class="cap-btn cap-btn-primary" id="cap-simulate">
+					<iconify-icon icon="mdi:play"></iconify-icon>
+					Simulate launch
+				</button>
+			</div>
+
+			<div class="cap-stats">
+				<div class="cap-stat">
+					<div class="cap-stat-label">Captures</div>
+					<div class="cap-stat-value" id="cap-count">0</div>
+				</div>
+				<div class="cap-stat">
+					<div class="cap-stat-label">Storage used</div>
+					<div class="cap-stat-value" id="cap-storage">0 MB</div>
+				</div>
+				<div class="cap-stat">
+					<div class="cap-stat-label">Last capture</div>
+					<div class="cap-stat-value" id="cap-last">—</div>
+				</div>
+			</div>
+
+			<section class="cap-section">
+				<h3 class="cap-section-title">Recording</h3>
+				<div class="cap-row">
+					<div class="cap-row-text">
+						<p class="cap-row-title">Auto-record on game launch</p>
+						<p class="cap-row-desc">Start recording in the background as soon as a modded session begins.</p>
+					</div>
+					<button class="cap-toggle on" data-toggle="auto"></button>
+				</div>
+				<div class="cap-row">
+					<div class="cap-row-text">
+						<p class="cap-row-title">Quality</p>
+						<p class="cap-row-desc">Higher quality means larger files. Adjust based on disk space.</p>
+					</div>
+					<select class="cap-select" id="cap-quality">
+						<option>1080p · 30fps</option>
+						<option selected>1080p · 60fps</option>
+						<option>1440p · 60fps</option>
+						<option>4K · 60fps</option>
+					</select>
+				</div>
+				<div class="cap-row">
+					<div class="cap-row-text">
+						<p class="cap-row-title">Hardware encoder</p>
+						<p class="cap-row-desc">Use NVENC / QuickSync if available. Falls back to CPU.</p>
+					</div>
+					<button class="cap-toggle on" data-toggle="hwenc"></button>
+				</div>
+				<div class="cap-row">
+					<div class="cap-row-text">
+						<p class="cap-row-title">Capture mic audio</p>
+						<p class="cap-row-desc">Records your default microphone alongside game audio.</p>
+					</div>
+					<button class="cap-toggle" data-toggle="mic"></button>
+				</div>
+			</section>
+
+			<section class="cap-section">
+				<h3 class="cap-section-title">Recent captures</h3>
+				<div class="cap-list" id="cap-list">
+					<div class="cap-empty" id="cap-empty">
+						No captures yet. Hit <strong>Simulate launch</strong> above to record one.
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<script>
+			const STORAGE_KEY = 'captures.preview.list';
+			const statusEl = document.getElementById('cap-status');
+			const statusLabel = document.getElementById('cap-status-label');
+			const countEl = document.getElementById('cap-count');
+			const storageEl = document.getElementById('cap-storage');
+			const lastEl = document.getElementById('cap-last');
+			const listEl = document.getElementById('cap-list');
+			const emptyEl = document.getElementById('cap-empty');
+			const simulateBtn = document.getElementById('cap-simulate');
+
+			let captures = [];
+			try {
+				captures = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+			} catch {
+				captures = [];
+			}
+
+			function persist() {
+				try {
+					localStorage.setItem(STORAGE_KEY, JSON.stringify(captures));
+				} catch {}
+			}
+
+			function fmtSize(mb) {
+				if (mb >= 1024) return (mb / 1024).toFixed(1) + ' GB';
+				return mb.toFixed(0) + ' MB';
+			}
+
+			function fmtRel(ts) {
+				const diff = (Date.now() - ts) / 1000;
+				if (diff < 60) return 'just now';
+				if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+				if (diff < 86400) return Math.floor(diff / 3600) + ' h ago';
+				return Math.floor(diff / 86400) + ' d ago';
+			}
+
+			function formatDuration(seconds) {
+				const m = Math.floor(seconds / 60);
+				const s = Math.floor(seconds % 60);
+				return m + ':' + String(s).padStart(2, '0');
+			}
+
+			function render() {
+				countEl.textContent = String(captures.length);
+				const totalMB = captures.reduce((acc, c) => acc + c.sizeMB, 0);
+				storageEl.textContent = fmtSize(totalMB);
+				lastEl.textContent = captures.length ? fmtRel(captures[0].ts) : '—';
+
+				if (!captures.length) {
+					listEl.innerHTML = '';
+					listEl.appendChild(emptyEl);
+					return;
+				}
+
+				listEl.innerHTML = '';
+				for (const c of captures) {
+					const item = document.createElement('div');
+					item.className = 'cap-item';
+					item.innerHTML =
+						'<div class="cap-item-thumb"><iconify-icon icon="mdi:video"></iconify-icon></div>' +
+						'<div>' +
+						'<p class="cap-item-title">' + c.game + ' · ' + c.profile + '</p>' +
+						'<p class="cap-item-meta">' + formatDuration(c.durationSec) + ' · ' + fmtSize(c.sizeMB) + ' · ' + fmtRel(c.ts) + '</p>' +
+						'</div>' +
+						'<div class="cap-item-actions">' +
+						'<button class="cap-icon-btn" title="Play"><iconify-icon icon="mdi:play"></iconify-icon></button>' +
+						'<button class="cap-icon-btn" title="Open folder"><iconify-icon icon="mdi:folder-open"></iconify-icon></button>' +
+						'<button class="cap-icon-btn" title="Delete" data-id="' + c.id + '"><iconify-icon icon="mdi:delete"></iconify-icon></button>' +
+						'</div>';
+					listEl.appendChild(item);
+				}
+
+				listEl.querySelectorAll('[data-id]').forEach((btn) => {
+					btn.addEventListener('click', () => {
+						captures = captures.filter((c) => c.id !== btn.dataset.id);
+						persist();
+						render();
+					});
+				});
+			}
+
+			document.querySelectorAll('.cap-toggle').forEach((t) => {
+				t.addEventListener('click', () => t.classList.toggle('on'));
+			});
+
+			simulateBtn.addEventListener('click', () => {
+				if (statusEl.classList.contains('recording')) return;
+				statusEl.classList.add('recording');
+				statusLabel.textContent = 'Recording…';
+				simulateBtn.disabled = true;
+
+				const games = ['R.E.P.O.', 'Lethal Company', 'Risk of Rain 2'];
+				const profiles = ['Default', 'Modded run', 'Coop'];
+				const game = games[Math.floor(Math.random() * games.length)];
+				const profile = profiles[Math.floor(Math.random() * profiles.length)];
+
+				setTimeout(() => {
+					statusEl.classList.remove('recording');
+					statusLabel.textContent = 'Idle';
+					simulateBtn.disabled = false;
+
+					const durationSec = 30 + Math.floor(Math.random() * 600);
+					const sizeMB = Math.floor(durationSec * (4 + Math.random() * 6));
+					captures.unshift({
+						id: 'sim_' + Date.now(),
+						game,
+						profile,
+						durationSec,
+						sizeMB,
+						ts: Date.now()
+					});
+					captures = captures.slice(0, 20);
+					persist();
+					render();
+				}, 2400);
+			});
+
+			render();
+		</script>
+	</body>
+</html>

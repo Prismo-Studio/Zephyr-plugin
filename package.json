@@ -5,6 +5,10 @@
 	"scripts": {
 		"build:registry": "node scripts/build-registry.mjs",
 		"validate": "node scripts/validate.mjs",
-		"preview": "node scripts/preview.mjs"
+		"preview": "node scripts/preview.mjs",
+		"new-plugin": "node scripts/new-plugin.mjs"
+	},
+	"devDependencies": {
+		"@inquirer/prompts": "^8.4.2"
 	}
 }

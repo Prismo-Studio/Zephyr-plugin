@@ -3,179 +3,79 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Zephyr Plugin Preview</title>
-		<link rel="stylesheet" href="/preview/preview.css" />
+		<title>Zephyr Launcher Preview</title>
+		<link rel="stylesheet" href="/preview/css/zephyr.css" />
+		<link rel="stylesheet" href="/preview/launcher.css" />
+		<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 	</head>
-	<body data-theme="dark">
-		<aside class="zp-sidebar">
-			<div class="zp-brand">
-				<span class="zp-brand-mark">⌁</span>
-				<span class="zp-brand-name">Zephyr Preview</span>
+	<body class="z-launcher" data-theme="dark">
+		<div class="z-titlebar">
+			<img src="/preview/logo.png" alt="Zephyr" class="z-titlebar-logo" />
+			<span class="z-titlebar-title">Zephyr</span>
+			<span class="z-titlebar-spacer"></span>
+			<div class="z-titlebar-controls">
+				<button class="z-titlebar-btn">—</button>
+				<button class="z-titlebar-btn">▢</button>
+				<button class="z-titlebar-btn">×</button>
 			</div>
-			<nav class="zp-nav">
-				<button class="zp-nav-item active">Plugins</button>
-				<button class="zp-nav-item">Browse</button>
-				<button class="zp-nav-item">Profiles</button>
-				<button class="zp-nav-item">Settings</button>
-			</nav>
-
-			<div class="zp-loader">
-				<h3>Load theme</h3>
-				<p class="zp-loader-hint">
-					Drop your <code>theme.css</code> anywhere on this page, or use the controls below.
-				</p>
-				<input type="file" id="zp-file" accept=".css,text/css" />
-				<details>
-					<summary>Paste CSS</summary>
-					<textarea
-						id="zp-paste"
-						spellcheck="false"
-						placeholder=":root[data-theme='my-theme'] { --bg-base: ... }"
-					></textarea>
-					<button class="zp-btn zp-btn-primary zp-btn-sm" id="zp-apply-paste">Apply</button>
-				</details>
-				<div class="zp-loader-actions">
-					<button class="zp-btn zp-btn-ghost zp-btn-sm" id="zp-reset">Reset</button>
-				</div>
-				<div class="zp-status" id="zp-status">
-					Active theme: <strong id="zp-active">dark</strong>
-				</div>
-			</div>
-		</aside>
-
-		<main class="zp-main">
-			<header class="zp-header">
-				<div>
-					<h1>Plugins</h1>
-					<span class="zp-subtitle">Manage installed extensions and bundled features</span>
-				</div>
-				<div class="zp-header-actions">
-					<button class="zp-btn zp-btn-ghost zp-btn-sm">↻ Refresh</button>
-				</div>
-			</header>
-
-			<section class="zp-section">
-				<h2 class="zp-section-title">Themes</h2>
-				<div class="zp-theme-carousel">
-					<button class="zp-theme-option active">
-						<div class="zp-theme-preview">
-							<span style="background: var(--accent-400)"></span>
-							<span style="background: var(--bg-elevated)"></span>
-							<span style="background: var(--text-primary)"></span>
-						</div>
-						<span>Your Theme</span>
-					</button>
-					<button class="zp-theme-option">
-						<div class="zp-theme-preview" style="background: #080e1a">
-							<span style="background: #1afffa"></span>
-							<span style="background: #111d33"></span>
-							<span style="background: #eaf0f6"></span>
-						</div>
-						<span>Dark (default)</span>
-					</button>
-					<button class="zp-theme-option">
-						<div class="zp-theme-preview" style="background: #f4f7fa">
-							<span style="background: #00b3ae"></span>
-							<span style="background: #f8fafc"></span>
-							<span style="background: #1a2438"></span>
-						</div>
-						<span>Light</span>
-					</button>
-				</div>
-			</section>
-
-			<section class="zp-section">
-				<h2 class="zp-section-title">Plugin cards</h2>
-				<div class="zp-plugin-grid">
-					<article class="zp-plugin-card">
-						<div class="zp-plugin-top">
-							<div class="zp-plugin-icon">⚙︎</div>
-							<div class="zp-plugin-body">
-								<h3 class="zp-plugin-name">Your Plugin</h3>
-								<p class="zp-plugin-meta">v1.0.0 by you</p>
-								<div class="zp-plugin-badges">
-									<span class="zp-plugin-type">Theme</span>
-									<span class="zp-plugin-status">Installed</span>
-								</div>
-							</div>
-						</div>
-						<p class="zp-plugin-desc">
-							This is what your plugin's description will look like in Zephyr's plugin
-							browser.
-						</p>
-						<div class="zp-plugin-actions">
-							<button class="zp-btn zp-btn-danger zp-btn-sm">Uninstall</button>
-						</div>
-					</article>
-
-					<article class="zp-plugin-card">
-						<div class="zp-plugin-top">
-							<div class="zp-plugin-icon">◉</div>
-							<div class="zp-plugin-body">
-								<h3 class="zp-plugin-name">Another Plugin</h3>
-								<p class="zp-plugin-meta">v2.3.1 by community</p>
-								<div class="zp-plugin-badges">
-									<span class="zp-plugin-type">Game</span>
-								</div>
-							</div>
-						</div>
-						<p class="zp-plugin-desc">
-							A second card so you can see how multiple plugins lay out side by side.
-						</p>
-						<div class="zp-plugin-actions">
-							<button class="zp-btn zp-btn-primary zp-btn-sm">Install</button>
-						</div>
-					</article>
-				</div>
-			</section>
-
-			<section class="zp-section">
-				<h2 class="zp-section-title">Buttons</h2>
-				<div class="zp-row">
-					<button class="zp-btn zp-btn-primary">Primary</button>
-					<button class="zp-btn zp-btn-secondary">Secondary</button>
-					<button class="zp-btn zp-btn-ghost">Ghost</button>
-					<button class="zp-btn zp-btn-danger">Danger</button>
-					<button class="zp-btn zp-btn-primary" disabled>Disabled</button>
-				</div>
-			</section>
-
-			<section class="zp-section">
-				<h2 class="zp-section-title">Form controls</h2>
-				<div class="zp-row">
-					<input class="zp-input" placeholder="Search mods…" />
-					<select class="zp-input">
-						<option>Steam</option>
-						<option>Epic</option>
-						<option>GOG</option>
-					</select>
-					<label class="zp-toggle">
-						<input type="checkbox" checked />
-						<span>Auto-fetch mods</span>
-					</label>
-				</div>
-			</section>
-
-			<section class="zp-section">
-				<h2 class="zp-section-title">Status colors</h2>
-				<div class="zp-row">
-					<span class="zp-pill zp-pill-success">Success</span>
-					<span class="zp-pill zp-pill-warning">Warning</span>
-					<span class="zp-pill zp-pill-error">Error</span>
-					<span class="zp-pill zp-pill-info">Info</span>
-				</div>
-			</section>
-
-			<section class="zp-section">
-				<h2 class="zp-section-title">Color tokens</h2>
-				<div class="zp-tokens" id="zp-tokens"></div>
-			</section>
-		</main>
-
-		<div class="zp-drop-overlay" id="zp-drop-overlay">
-			<div>Drop <code>theme.css</code> to apply</div>
 		</div>
 
-		<script src="/preview/preview.js"></script>
+		<div class="z-app-row">
+			<aside class="z-sidebar">
+				<div class="z-sidebar-game">
+					<div class="z-sidebar-game-icon">
+						<iconify-icon icon="mdi:gamepad-variant"></iconify-icon>
+					</div>
+					<span class="z-sidebar-game-label">Game</span>
+				</div>
+
+				<nav class="z-sidebar-nav" id="z-nav">
+					<button class="z-nav-item" data-target="dashboard">
+						<iconify-icon class="z-nav-icon" icon="mdi:view-dashboard"></iconify-icon>
+						<span class="z-nav-label">Home</span>
+					</button>
+					<button class="z-nav-item" data-target="mods">
+						<iconify-icon class="z-nav-icon" icon="mdi:package-variant"></iconify-icon>
+						<span class="z-nav-label">Mods</span>
+					</button>
+					<button class="z-nav-item" data-target="browse">
+						<iconify-icon class="z-nav-icon" icon="mdi:store-search"></iconify-icon>
+						<span class="z-nav-label">Browse</span>
+					</button>
+					<button class="z-nav-item" data-target="profiles">
+						<iconify-icon class="z-nav-icon" icon="mdi:account-group"></iconify-icon>
+						<span class="z-nav-label">Profile</span>
+					</button>
+					<button class="z-nav-item" data-target="config">
+						<iconify-icon class="z-nav-icon" icon="mdi:cog"></iconify-icon>
+						<span class="z-nav-label">Config</span>
+					</button>
+					<button class="z-nav-item" data-target="plugins">
+						<iconify-icon class="z-nav-icon" icon="mdi:puzzle"></iconify-icon>
+						<span class="z-nav-label">Plugins</span>
+					</button>
+					<button class="z-nav-item active" data-target="settings">
+						<iconify-icon class="z-nav-icon" icon="mdi:tune-vertical"></iconify-icon>
+						<span class="z-nav-label">Settings</span>
+						<span class="z-nav-indicator"></span>
+					</button>
+				</nav>
+
+				<div class="z-sidebar-bottom">
+					<button class="z-launch-btn" title="Play">
+						<iconify-icon icon="mdi:play"></iconify-icon>
+					</button>
+					<div class="z-profile-pill">
+						<iconify-icon icon="mdi:account"></iconify-icon>
+					</div>
+				</div>
+			</aside>
+
+			<main class="z-content" id="z-content">
+				<!-- Page content injected by launcher.js -->
+			</main>
+		</div>
+
+		<script src="/preview/launcher.js" type="module"></script>
 	</body>
 </html>
