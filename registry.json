@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-05-14T01:41:37.690Z",
+  "generated": "2026-05-14T02:01:37.609Z",
   "plugins": [
     {
       "id": "archipelago",
@@ -16,21 +16,6 @@
       "defaultInstalled": true,
       "removable": true,
       "path": "features/archipelago"
-    },
-    {
-      "id": "captures",
-      "name": "Captures",
-      "version": "1.0.0",
-      "type": "feature",
-      "author": {
-        "name": "MathisBls"
-      },
-      "description": "Auto-record gameplay when you launch a modded game. Local-first, organised by game and profile, ready to share.",
-      "icon": "icon.svg",
-      "sidebarLabel": "Captures",
-      "defaultInstalled": false,
-      "removable": true,
-      "path": "features/captures"
     },
     {
       "id": "neon-pulse",
