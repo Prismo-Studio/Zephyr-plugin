@@ -2,11 +2,9 @@
 import { mkdir, writeFile, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
 import { select, input } from '@inquirer/prompts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = Number(process.env.PORT ?? 5174);
 const SIDEBAR_LABEL_MAX = 18;
 
 function slugify(text) {
@@ -89,7 +87,7 @@ async function scaffoldTheme({ slug, name, author, description }) {
 	const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#78c8ff"><circle cx="12" cy="12" r="10"/></svg>\n`;
 	await writeFile(join(folder, 'icon.svg'), icon);
 
-	return { folder, previewPath: `/preview/index.html?theme=${slug}` };
+	return { folder };
 }
 
 async function scaffoldFeature({ slug, name, author, description, sidebarLabel }) {
@@ -140,29 +138,7 @@ async function scaffoldFeature({ slug, name, author, description, sidebarLabel }
 	const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#78c8ff"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>\n`;
 	await writeFile(join(folder, 'icon.svg'), icon);
 
-	return { folder, previewPath: `/preview/index.html?feature=${slug}` };
-}
-
-function spawnPreview(previewPath) {
-	const proc = spawn(process.execPath, [join(ROOT, 'scripts/preview.mjs')], {
-		stdio: 'inherit',
-		env: { ...process.env, PORT: String(PORT) }
-	});
-	proc.on('exit', (code) => process.exit(code ?? 0));
-
-	// Open the browser at the right path once the server has had a moment to bind.
-	const url = `http://localhost:${PORT}${previewPath}`;
-	setTimeout(() => {
-		const opener =
-			process.platform === 'win32'
-				? ['cmd', ['/c', 'start', '""', url]]
-				: process.platform === 'darwin'
-					? ['open', [url]]
-					: ['xdg-open', [url]];
-		spawn(opener[0], opener[1], { stdio: 'ignore', detached: true }).unref();
-	}, 400);
-
-	return proc;
+	return { folder };
 }
 
 async function main() {
@@ -216,10 +192,11 @@ async function main() {
 			? await scaffoldTheme({ slug, name, author, description })
 			: await scaffoldFeature({ slug, name, author, description, sidebarLabel });
 
-	console.log(`\n  ✔ Scaffolded ${result.folder}`);
-	console.log(`  ✔ Starting preview on http://localhost:${PORT}${result.previewPath}\n`);
-
-	spawnPreview(result.previewPath);
+	console.log(`\n  ✔ Scaffolded ${result.folder}\n`);
+	console.log('  Next steps:');
+	console.log('    1. Open Zephyr → Plugins → Dev Mode → Load plugin from disk');
+	console.log(`    2. Pick the folder: ${result.folder}`);
+	console.log('    3. Edit files in your editor — the preview hot-reloads automatically.\n');
 }
 
 main().catch((err) => {
