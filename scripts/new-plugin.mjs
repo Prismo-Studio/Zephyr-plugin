@@ -87,7 +87,7 @@ async function scaffoldTheme({ slug, name, author, description }) {
 	const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#78c8ff"><circle cx="12" cy="12" r="10"/></svg>\n`;
 	await writeFile(join(folder, 'icon.svg'), icon);
 
-	return { folder };
+	return { folder, type: 'theme' };
 }
 
 async function scaffoldFeature({ slug, name, author, description, sidebarLabel }) {
@@ -95,7 +95,7 @@ async function scaffoldFeature({ slug, name, author, description, sidebarLabel }
 	if (await exists(folder)) {
 		throw new Error(`features/${slug} already exists. Pick a different slug.`);
 	}
-	await mkdir(join(folder, 'ui'), { recursive: true });
+	await mkdir(join(folder, 'src'), { recursive: true });
 
 	const manifest = {
 		id: slug,
@@ -106,39 +106,214 @@ async function scaffoldFeature({ slug, name, author, description, sidebarLabel }
 		description,
 		icon: 'icon.svg',
 		sidebarLabel,
+		entry: 'dist/index.html',
 		defaultInstalled: false,
 		removable: true
 	};
 	await writeFile(join(folder, 'manifest.json'), JSON.stringify(manifest, null, '\t') + '\n');
 
-	const ui = `<!DOCTYPE html>
-<html>
+	const pkg = {
+		name: `zephyr-plugin-${slug}`,
+		private: true,
+		type: 'module',
+		scripts: {
+			dev: 'vite build --watch --mode development',
+			build: 'vite build'
+		},
+		devDependencies: {
+			'@sveltejs/vite-plugin-svelte': '^5.0.3',
+			svelte: '^5.20.0',
+			typescript: '^5.7.0',
+			vite: '^6.0.0',
+			'vite-plugin-singlefile': '^2.0.0'
+		}
+	};
+	await writeFile(join(folder, 'package.json'), JSON.stringify(pkg, null, '\t') + '\n');
+
+	const viteConfig = `import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { viteSingleFile } from 'vite-plugin-singlefile';
+
+// Inline plugin.js and plugin.css directly into dist/index.html. Tauri's
+// asset:// protocol on Windows mishandles relative sub-resource URLs
+// (drive letters get encoded weird), so shipping a single self-contained
+// HTML file is the reliable path.
+export default defineConfig({
+	plugins: [svelte(), viteSingleFile()],
+	base: './',
+	build: {
+		outDir: 'dist',
+		emptyOutDir: true,
+		assetsInlineLimit: 100000000,
+		cssCodeSplit: false,
+		rollupOptions: {
+			output: { inlineDynamicImports: true }
+		}
+	}
+});
+`;
+	await writeFile(join(folder, 'vite.config.ts'), viteConfig);
+
+	const tsconfig = {
+		compilerOptions: {
+			target: 'ES2022',
+			module: 'ESNext',
+			moduleResolution: 'bundler',
+			strict: true,
+			skipLibCheck: true,
+			isolatedModules: true,
+			verbatimModuleSyntax: true,
+			types: ['svelte', 'vite/client']
+		},
+		include: ['src/**/*.ts', 'src/**/*.svelte']
+	};
+	await writeFile(join(folder, 'tsconfig.json'), JSON.stringify(tsconfig, null, '\t') + '\n');
+
+	const indexHtml = `<!DOCTYPE html>
+<html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<style>
-			body {
-				font-family: system-ui, sans-serif;
-				margin: 0;
-				padding: 24px;
-				background: transparent;
-				color: #fff;
-			}
-			h1 { margin-top: 0; }
-			.hint { color: #888; font-size: 13px; }
-		</style>
+		<title>${name}</title>
 	</head>
 	<body>
-		<h1>${name}</h1>
-		<p class="hint">Edit <code>features/${slug}/ui/index.html</code> to start building your sidebar feature. The preview hot-reloads on refresh.</p>
+		<div id="app"></div>
+		<script type="module" src="/src/main.ts"></script>
 	</body>
 </html>
 `;
-	await writeFile(join(folder, 'ui', 'index.html'), ui);
+	await writeFile(join(folder, 'index.html'), indexHtml);
+
+	const mainTs = `import { mount } from 'svelte';
+import App from './App.svelte';
+
+mount(App, { target: document.getElementById('app')! });
+`;
+	await writeFile(join(folder, 'src', 'main.ts'), mainTs);
+
+	const zephyrTs = `// Tiny client for the Zephyr plugin bridge.
+// Plugins talk to the host via postMessage; Zephyr replies with the same id.
+let seq = 0;
+const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+
+window.addEventListener('message', (evt) => {
+	const data = evt.data as { id?: number; result?: unknown; error?: string };
+	if (typeof data?.id !== 'number') return;
+	const cb = pending.get(data.id);
+	if (!cb) return;
+	pending.delete(data.id);
+	if (data.error) cb.reject(new Error(data.error));
+	else cb.resolve(data.result);
+});
+
+function call<T = unknown>(type: string, payload?: unknown): Promise<T> {
+	return new Promise((resolve, reject) => {
+		const id = ++seq;
+		pending.set(id, { resolve: resolve as (v: unknown) => void, reject });
+		window.parent.postMessage({ id, type, payload }, '*');
+		setTimeout(() => {
+			if (pending.has(id)) {
+				pending.delete(id);
+				reject(new Error('Zephyr did not reply (open this plugin inside Zephyr)'));
+			}
+		}, 8000);
+	});
+}
+
+export const zephyr = {
+	storage: {
+		get: <T = unknown>() => call<T>('zephyr.storage.get'),
+		set: (value: unknown) => call<null>('zephyr.storage.set', { value })
+	},
+	openExternal: (url: string) => call<null>('zephyr.openExternal', { url }),
+	notify: (message: string, opts?: { kind?: 'info' | 'error'; title?: string }) =>
+		call<null>('zephyr.notify', { message, ...opts }),
+	plugin: () =>
+		call<{ id: string; name: string; version: string; dev: boolean }>('zephyr.plugin.info')
+};
+`;
+	await writeFile(join(folder, 'src', 'zephyr.ts'), zephyrTs);
+
+	const appSvelte = `<script lang="ts">
+	import { zephyr } from './zephyr';
+	import { onMount } from 'svelte';
+
+	let info = $state<{ id: string; name: string; version: string; dev: boolean } | null>(null);
+	let counter = $state(0);
+
+	onMount(async () => {
+		try {
+			info = await zephyr.plugin();
+			const saved = await zephyr.storage.get<{ counter?: number }>();
+			if (saved && typeof saved.counter === 'number') counter = saved.counter;
+		} catch {}
+	});
+
+	async function increment() {
+		counter += 1;
+		await zephyr.storage.set({ counter });
+	}
+
+	async function notify() {
+		await zephyr.notify('Hello from ${name}', { title: '${name}' });
+	}
+</script>
+
+<main>
+	<header>
+		<h1>${name}</h1>
+		<p>${description}</p>
+		{#if info?.dev}<span class="dev-badge">Dev mode · v{info.version}</span>{/if}
+	</header>
+
+	<section>
+		<button onclick={increment}>Clicked {counter} times</button>
+		<button onclick={notify}>Send a Zephyr toast</button>
+	</section>
+</main>
+
+<style>
+	main {
+		font-family: system-ui, sans-serif;
+		color: #eaf0f6;
+		padding: 24px;
+	}
+	h1 { margin: 0 0 4px; font-size: 24px; }
+	p { margin: 0; color: #8899aa; font-size: 13px; }
+	.dev-badge {
+		display: inline-block;
+		margin-top: 8px;
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: rgba(168, 85, 247, 0.18);
+		color: #c084fc;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+	}
+	section { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+	button {
+		padding: 10px 16px;
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: rgba(26, 255, 250, 0.08);
+		color: #1afffa;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		font-family: inherit;
+	}
+	button:hover { border-color: rgba(26, 255, 250, 0.4); }
+</style>
+`;
+	await writeFile(join(folder, 'src', 'App.svelte'), appSvelte);
+
+	const gitignore = `node_modules/\ndist/\n`;
+	await writeFile(join(folder, '.gitignore'), gitignore);
 
 	const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#78c8ff"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>\n`;
 	await writeFile(join(folder, 'icon.svg'), icon);
 
-	return { folder };
+	return { folder, type: 'feature' };
 }
 
 async function main() {
@@ -193,10 +368,20 @@ async function main() {
 			: await scaffoldFeature({ slug, name, author, description, sidebarLabel });
 
 	console.log(`\n  ✔ Scaffolded ${result.folder}\n`);
-	console.log('  Next steps:');
-	console.log('    1. Open Zephyr → Plugins → Dev Mode → Load plugin from disk');
-	console.log(`    2. Pick the folder: ${result.folder}`);
-	console.log('    3. Edit files in your editor — the preview hot-reloads automatically.\n');
+	if (result.type === 'feature') {
+		console.log('  Next steps:');
+		console.log(`    1. cd ${result.folder}`);
+		console.log('    2. pnpm install         (one-time install of Svelte/Vite)');
+		console.log('    3. pnpm dev             (watch mode, rebuilds dist/ on save)');
+		console.log('    4. Open Zephyr → Plugins → Dev Mode → Load plugin from disk');
+		console.log(`    5. Pick the folder: ${result.folder}`);
+		console.log('    6. Edit src/App.svelte — Vite rebuilds, Zephyr hot-reloads.\n');
+	} else {
+		console.log('  Next steps:');
+		console.log('    1. Open Zephyr → Plugins → Dev Mode → Load plugin from disk');
+		console.log(`    2. Pick the folder: ${result.folder}`);
+		console.log('    3. Edit theme.css — Zephyr hot-reloads automatically.\n');
+	}
 }
 
 main().catch((err) => {

@@ -1,0 +1,62 @@
+/* Zephyr design tokens, mirrored for plugins.
+ * Match the names used in src/app.css of Zephyr so themes affect plugin
+ * UI the same way they affect the host. Plugins import this file once and
+ * use `var(--*)` in their own components. */
+
+:root {
+	--font-display: 'DM Sans', 'Inter', system-ui, sans-serif;
+	--font-body: 'Outfit', 'Inter', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+	--bg-base: #080e1a;
+	--bg-surface: #0d1526;
+	--bg-elevated: #111d33;
+	--bg-overlay: #162240;
+	--bg-hover: rgba(26, 255, 250, 0.04);
+	--bg-active: rgba(26, 255, 250, 0.08);
+
+	--border-subtle: rgba(255, 255, 255, 0.06);
+	--border-default: rgba(255, 255, 255, 0.1);
+	--border-strong: rgba(255, 255, 255, 0.16);
+	--border-accent: rgba(26, 255, 250, 0.3);
+
+	--text-primary: #eaf0f6;
+	--text-secondary: #8899aa;
+	--text-muted: #556677;
+	--text-accent: #1afffa;
+	--text-inverse: #080e1a;
+
+	--accent-300: #4dfffc;
+	--accent-400: #1afffa;
+	--accent-500: #00d4d0;
+	--accent-600: #00aaa8;
+	--accent-700: #008080;
+
+	--success: #00d4aa;
+	--warning: #ffb347;
+	--error: #ff5c5c;
+
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+	--radius-xl: 20px;
+	--radius-full: 9999px;
+
+	--space-xs: 4px;
+	--space-sm: 8px;
+	--space-md: 12px;
+	--space-lg: 16px;
+	--space-xl: 24px;
+	--space-2xl: 32px;
+	--space-3xl: 48px;
+
+	--shadow-glow: 0 0 20px rgba(26, 255, 250, 0.15);
+	--transition-fast: 100ms ease;
+}
+
+body {
+	margin: 0;
+	background: transparent;
+	color: var(--text-primary);
+	font-family: var(--font-body);
+}
