@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-05-14T03:21:32.639Z",
+  "generated": "2026-05-14T03:32:15.180Z",
   "plugins": [
     {
       "id": "archipelago",
@@ -28,6 +28,7 @@
       "description": "Auto-record gameplay when you launch a modded game.",
       "icon": "icon.svg",
       "sidebarLabel": "Captures",
+      "sidebarIcon": "mdi:record-rec",
       "entry": "dist/index.html",
       "defaultInstalled": false,
       "removable": true,
