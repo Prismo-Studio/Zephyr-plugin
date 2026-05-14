@@ -1,0 +1,17 @@
+{
+	"name": "@zephyr-plugin/sdk",
+	"version": "0.1.0",
+	"description": "Shared Svelte components and bridge client for Zephyr plugins.",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/index.ts",
+		"./components": "./src/components/index.ts",
+		"./components/*.svelte": "./src/components/*.svelte",
+		"./tokens.css": "./src/tokens.css",
+		"./src/tokens.css": "./src/tokens.css"
+	},
+	"peerDependencies": {
+		"svelte": "^5.0.0"
+	}
+}
